@@ -1,5 +1,5 @@
-/* ===================================
-   MOMENTUM – Design System & Styles
+﻿/* ===================================
+   MOMENTUM â€“ Design System & Styles
    =================================== */
 
 /* ---------- CSS Variables ---------- */
@@ -148,6 +148,54 @@ body {
 .nav-link.active {
   color: var(--blue);
   background: var(--blue-light);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 8px;
+  padding-left: 20px;
+  border-left: 1px solid var(--border-light);
+}
+
+.nav-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.nav-user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.logout-link {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  margin-top: 2px;
+  transition: color var(--duration) var(--ease);
+}
+
+.logout-link:hover {
+  color: var(--red);
 }
 
 /* ---------- Pages ---------- */
@@ -952,7 +1000,7 @@ body {
 }
 
 .day-checkbox:checked::after {
-  content: '✓';
+  content: 'âœ“';
   position: absolute;
   top: 50%;
   left: 50%;
@@ -1743,12 +1791,12 @@ body {
 }
 
 .streak-tooltip ul li::before {
-  content: '🏆';
+  content: 'ðŸ†';
   font-size: 0.8rem;
 }
 
 .focus-tooltip ul li::before {
-  content: '⚡';
+  content: 'âš¡';
   font-size: 0.8rem;
 }
 
@@ -1763,7 +1811,7 @@ body {
 }
 
 .momentum-tooltip h4::before {
-  content: '💡';
+  content: 'ðŸ’¡';
 }
 
 .momentum-tooltip ul {
@@ -1782,7 +1830,7 @@ body {
 }
 
 .momentum-tooltip li::before {
-  content: '•';
+  content: 'â€¢';
   position: absolute;
   left: 0;
   color: #60A5FA;

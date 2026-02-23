@@ -1,0 +1,21 @@
+{
+  "name": "new-habit",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "bugs": {
+    "url": "https://github.com/sagar946kumar/momentum/issues"
+  },
+  "homepage": "https://github.com/sagar946kumar/momentum#readme",
+  "dependencies": {
+    "@polar-sh/sdk": "^0.43.1",
+    "@supabase/supabase-js": "^2.97.0",
+    "vite": "^7.3.1"
+  }
+}

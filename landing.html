@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Momentum | Dream Bigger. Become Greater.</title>
+    <meta name="description"
+        content="The ultimate habit tracker designed to help you stay consistent, build momentum, and achieve your biggest dreams. Transform your life with systems, not just motivation.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="landing.css">
+    <script>
+        // Check if already logged in
+        function checkAccess() {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user && user.isLoggedIn) {
+                window.location.href = 'index.html';
+            }
+        }
+
+        checkAccess();
+    </script>
+</head>
+
+<body>
+    <header class="header">
+        <div class="container container-nav">
+            <div class="logo">
+                <span class="logo-icon">✦</span>
+                <span class="logo-text">Momentum</span>
+            </div>
+            <nav class="nav">
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#faq">FAQ</a>
+                <button class="nav-login-btn google-login-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Login
+                </button>
+            </nav>
+            <button class="mobile-nav-toggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container hero-container">
+                <p class="hero-badge">✦ MOMENTUM</p>
+                <h1 class="hero-title">Dream Bigger.<br>Become Greater.</h1>
+                <p class="hero-subtitle">
+                    You don't discover your potential by thinking about it.<br>
+                    You discover it by building habits and executing goals every single day.
+                </p>
+                <p class="hero-tagline">Give momentum to your dreams.</p>
+                <div class="hero-actions">
+                    <button class="btn btn-gradient google-login-btn">Start Your
+                        Journey</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Checklist -->
+        <section class="features" id="features">
+            <div class="container">
+                <h2 class="section-title">Everything you need to<br>stay consistent</h2>
+                <div class="features-list">
+                    <div class="feature-item">
+                        <span class="check-icon">✓</span>
+                        <p>Daily Habit Tracking</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="check-icon">✓</span>
+                        <p>Automated Progress Charts</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="check-icon">✓</span>
+                        <p>Weekly & Monthly View</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="check-icon">✓</span>
+                        <p>Add Upto 99 Habits</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="check-icon">✓</span>
+                        <p>Automatic Streaks</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="check-icon">✓</span>
+                        <p>Works with Google Sheets & Excel</p>
+                    </div>
+                    <div class="feature-item">
+                        <span class="check-icon">✓</span>
+                        <p>Editable Offline</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pain Points & Systems -->
+        <section class="systems">
+            <div class="container">
+                <h2 class="section-title">Why staying consistent feels impossible?</h2>
+                <p class="section-subtitle">
+                    You don't fail at habits because you're lazy.<br>
+                    You fail because progress is hard to see.
+                </p>
+                <div class="pain-points">
+                    <div class="pain-item">
+                        <span class="cross-icon">✕</span>
+                        <p>You start strong, then miss one day</p>
+                    </div>
+                    <div class="pain-item">
+                        <span class="cross-icon">✕</span>
+                        <p>Tracking stops, motivation fades</p>
+                    </div>
+                    <div class="pain-item">
+                        <span class="cross-icon">✕</span>
+                        <p>Progress disappears, habits feel pointless</p>
+                    </div>
+                </div>
+
+                <div class="quote-container">
+                    <blockquote>
+                        "You do not rise to the level of your goals.<br>
+                        You fall to the level of your systems."
+                    </blockquote>
+                    <cite>— James Clear, Atomic Habits</cite>
+                </div>
+
+                <p class="systems-highlight">THAT'S WHY SYSTEMS MATTER MORE THAN MOTIVATION.</p>
+
+
+            </div>
+        </section>
+
+
+
+        <!-- Trial Section -->
+        <section class="trial" id="pricing">
+            <div class="container container-small">
+                <div class="trial-card">
+                    <h2 class="trial-title">Free 21-Day Trial</h2>
+
+                    <div class="trial-features">
+                        <div class="trial-group">
+                            <h3>Build</h3>
+                            <ul>
+                                <li>Set Goals and track your progress</li>
+                                <li>Analyze habits with insights</li>
+                            </ul>
+                        </div>
+
+                        <div class="trial-group">
+                            <h3>Execute</h3>
+                            <ul>
+                                <li>Get visual momentum made for you</li>
+                                <li>Build your own Dream Plans</li>
+                            </ul>
+                        </div>
+
+                        <div class="trial-group">
+                            <h3>Achieve</h3>
+                            <ul>
+                                <li>Compete against your past self</li>
+                                <li>Join streaks and build consistency</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="trial-billing">
+                        <div class="billing-row today">
+                            <span>Billed today</span>
+                            <span>$0.00</span>
+                        </div>
+                        <div class="billing-row">
+                            <span>Monthly subscription</span>
+                            <span>$20.00</span>
+                        </div>
+                        <div class="billing-row">
+                            <span>Lifetime access (Optional upgrade)</span>
+                            <span>$30.00</span>
+                        </div>
+                    </div>
+
+                    <div class="trial-links">
+                        <a href="#">Select Another Plan</a> &nbsp;&middot;&nbsp; <a href="#">Redeem Promo Code</a>
+                    </div>
+
+                    <button class="btn full-width google-login-btn trial-btn">Start 21-Day Free Trial</button>
+
+                    <p class="trial-disclaimer">
+                        After your free trial, you'll be charged $20.00 every month. You agree that the subscription
+                        automatically renews unless you cancel at least 24 hours before your renewal date. You can
+                        cancel your trial or subscription at any time from your account settings. Upgrade to lifetime
+                        access for a one-time payment of $30.00.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section class="faq" id="faq">
+            <div class="container container-small">
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <div class="faq-list">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>Is this a subscription or a one-time payment?</h3>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Momentum Pro and Team plans are one-time payments. No monthly fees, no hidden costs. Pay
+                                once, use it for life.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>How does the Google Sheets sync work?</h3>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>You can connect your Google account to automatically sync your habit data. It works both
+                                ways, so you can edit in your sheets or in our dashboard.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>Can I use it offline?</h3>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>Yes! Momentum is built to work seamlessly offline. Your progress will sync automatically
+                                as soon as you are reconnected to the internet.</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <h3>What if I'm not satisfied?</h3>
+                            <span class="faq-toggle">+</span>
+                        </div>
+                        <div class="faq-answer">
+                            <p>We offer a 30-day money-back guarantee. If Momentum doesn't help you build better
+                                systems, we'll refund your purchase with no questions asked.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="logo">
+                    <span class="logo-icon">✦</span>
+                    <span class="logo-text">Momentum</span>
+                </div>
+                <div class="footer-links">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Contact Us</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Momentum Habit Tracker. Designed for consistency.</p>
+                <div class="social-links">
+                    <!-- Social icons would go here -->
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="landing.js"></script>
+    <script type="module">
+        import { createClient } from '@supabase/supabase-js';
+
+        // Supabase Configuration from Vite .env
+        const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+
+        let supabaseClient;
+        try {
+            if (SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+                supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (e) {
+            console.error("Supabase init error:", e);
+        }
+
+        async function signInWithGoogle() {
+            if (!supabaseClient) {
+                alert("Please configure your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the .env file first.");
+                return;
+            }
+            const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin + '/index.html'
+                }
+            });
+
+            if (error) {
+                console.error('Error logging in:', error.message);
+                alert('Login failed: ' + error.message);
+            }
+        }
+
+        const loginBtns = document.querySelectorAll('.google-login-btn');
+        loginBtns.forEach(btn => {
+            btn.addEventListener('click', signInWithGoogle);
+        });
+
+        // Check if session exists on load
+        async function checkSession() {
+            if (!supabaseClient) return;
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    // Store user info in localStorage for index.html compatibility
+                    localStorage.setItem('user', JSON.stringify({
+                        name: session.user.user_metadata.full_name,
+                        email: session.user.email,
+                        picture: session.user.user_metadata.avatar_url,
+                        isLoggedIn: true
+                    }));
+                    window.location.href = 'index.html';
+                }
+            } catch (e) {
+                console.error("Session check error:", e);
+            }
+        }
+
+        checkSession();
+    </script>
+</body>
+
+</html>

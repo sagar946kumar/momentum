@@ -13,7 +13,27 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script type="module">
+    // Vite uses import.meta.env
+    window.ENV = {
+      SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+      SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY
+    };
+  </script>
   <link rel="stylesheet" href="style.css" />
+  <script>
+    // Auth check - Force Google Sign-in
+    // If returning from OAuth, don't redirect yet (Supabase needs to process URL)
+    const isAuthCallback = window.location.hash.includes('access_token') ||
+      window.location.hash.includes('error_description') ||
+      window.location.search.includes('code');
+    if (!isAuthCallback) {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user || !user.isLoggedIn) {
+        window.location.href = 'landing.html';
+      }
+    }
+  </script>
 </head>
 
 <body>
@@ -23,30 +43,25 @@
     <a href="#landing" class="nav-logo">
       <span class="logo-icon">◆</span> Momentum
     </a>
-    <div class="nav-links">
-      <a href="#landing" class="nav-link" data-page="landing">Dreams</a>
-      <a href="#dashboard" class="nav-link" data-page="dashboard">Dashboard</a>
+    <div class="nav-right" style="display: flex; align-items: center; gap: 20px;">
+      <div class="nav-links">
+        <a href="#landing" class="nav-link" data-page="landing">Dreams</a>
+        <a href="#dashboard" class="nav-link" data-page="dashboard">Dashboard</a>
+      </div>
+      <div class="user-profile" id="user-profile">
+        <img id="user-avatar" src="" alt="User" class="nav-avatar">
+        <div class="user-info">
+          <span id="user-name" class="nav-user-name"></span>
+          <button id="btn-logout" class="logout-link">Sign out</button>
+        </div>
+      </div>
     </div>
   </nav>
 
   <!-- ========== PAGE: LANDING ========== -->
   <section id="page-landing" class="page active">
 
-    <!-- Hero -->
-    <div class="hero">
-      <div class="hero-glow"></div>
-      <p class="hero-eyebrow">✦ Momentum</p>
-      <h1 class="hero-headline">Dream Bigger.<br />Become Greater.</h1>
-      <p class="hero-sub">
-        You don't discover your potential by thinking about it.<br />
-        You discover it by building habits and executing goals every single day.
-      </p>
-      <p class="hero-bold">Give momentum to your dreams.</p>
-      <div class="hero-actions">
-        <button class="btn btn-primary" id="btn-start-journey">Start Your Journey</button>
-        <button class="btn btn-secondary" id="btn-add-dream-hero">Add Your First Dream</button>
-      </div>
-    </div>
+
 
     <!-- Dreams Section -->
     <div class="section-dreams" id="section-dreams">
@@ -388,14 +403,121 @@
       <div class="modal-body">
         <p id="confirm-message">Are you sure you want to delete this?</p>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="btn-confirm-cancel">Cancel</button>
-        <button class="btn btn-danger" id="btn-confirm-ok">Delete</button>
-      </div>
     </div>
   </div>
+  </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
+  <script type="module">
+    import { createClient } from '@supabase/supabase-js';
+    import { Polar } from '@polar-sh/sdk';
+
+    // Supabase Configuration from Vite .env
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+
+    let supabaseClient;
+    try {
+      if (SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+    } catch (e) {
+      console.error("Supabase init error:", e);
+    }
+
+    // Populate user info and handle logout
+    document.addEventListener('DOMContentLoaded', async () => {
+      let user = JSON.parse(localStorage.getItem('user'));
+
+      // Sync with Supabase session if client is initialized
+      if (supabaseClient) {
+        try {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          if (session) {
+            user = {
+              name: session.user.user_metadata.full_name,
+              email: session.user.email,
+              picture: session.user.user_metadata.avatar_url,
+              isLoggedIn: true,
+              polarCheckoutCompleted: user?.polarCheckoutCompleted || false
+            };
+            localStorage.setItem('user', JSON.stringify(user));
+          }
+        } catch (e) {
+          console.error("Session sync error:", e);
+        }
+      }
+
+      // Update UI
+      if (user) {
+        // --- POLAR CHECKOUT INTEGRATION START ---
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('checkout_id')) {
+          user.polarCheckoutCompleted = true;
+          localStorage.setItem('user', JSON.stringify(user));
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        const POLAR_TOKEN = import.meta.env.VITE_POLAR_ACCESS_TOKEN;
+        const POLAR_PRODUCT = import.meta.env.VITE_POLAR_PRODUCT_ID;
+
+        // If Polar is configured and user hasn't successfully checked out yet
+        if (!user.polarCheckoutCompleted && POLAR_TOKEN && POLAR_TOKEN !== 'pol_YOUR_ACCESS_TOKEN' && POLAR_PRODUCT && POLAR_PRODUCT !== 'YOUR_PRODUCT_ID') {
+          try {
+            // Initialize Polar SDK
+            const polar = new Polar({
+              accessToken: POLAR_TOKEN,
+              server: 'sandbox' // or 'production' when going live
+            });
+
+            // Create a checkout session
+            const checkout = await polar.checkouts.custom.create({
+              productId: POLAR_PRODUCT,
+              customerEmail: user.email,
+              customerName: user.name,
+              successUrl: window.location.origin + window.location.pathname + '?checkout_id={CHECKOUT_ID}',
+            });
+
+            // Redirect user to the trial/pay page
+            window.location.href = checkout.url;
+            return; // halt UI rendering 
+          } catch (err) {
+            console.error("Polar Checkout Error:", err);
+          }
+        }
+        // --- POLAR CHECKOUT INTEGRATION END ---
+
+        if (document.getElementById('user-name')) {
+          document.getElementById('user-name').textContent = user.name;
+        }
+        if (document.getElementById('user-avatar')) {
+          document.getElementById('user-avatar').src = user.picture || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name);
+        }
+      }
+
+      // Logout handler
+      const logoutBtn = document.getElementById('btn-logout');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          console.log("Logging out...");
+
+          if (supabaseClient) {
+            try {
+              await supabaseClient.auth.signOut();
+            } catch (err) {
+              console.error("Supabase signout error:", err);
+            }
+          }
+
+          localStorage.removeItem('user');
+          window.location.href = 'landing.html';
+        });
+      } else {
+        console.error("Logout button not found in DOM");
+      }
+    });
+  </script>
 </body>
 
 </html>

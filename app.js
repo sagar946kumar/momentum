@@ -2,13 +2,45 @@
    MOMENTUM – Application Logic
    =================================== */
 
+import { createClient } from '@supabase/supabase-js';
+
 (function () {
   'use strict';
 
-  // ─── Data Layer ────────────────────────────────────────────
+  // ─── Data Layer (Supabase + Local Fallback) ───────────────────
   const STORAGE_KEY = 'momentum_data';
+  const SUPABASE_URL = window.ENV?.SUPABASE_URL || 'YOUR_SUPABASE_URL';
+  const SUPABASE_ANON_KEY = window.ENV?.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
 
-  function loadData() {
+  let supabaseClient = null;
+  try {
+    if (SUPABASE_URL && SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+      supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  } catch (e) { console.error("Supabase init error:", e); }
+
+  async function loadData() {
+    // 1. Try to load from Supabase if logged in
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (supabaseClient && user && user.isLoggedIn) {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          const { data, error } = await supabaseClient
+            .from('user_data')
+            .select('dreams')
+            .eq('id', session.user.id)
+            .single();
+
+          if (data && data.dreams) {
+            console.log("Loaded from Supabase");
+            return { dreams: data.dreams };
+          }
+        }
+      } catch (e) { console.error("Supabase load error:", e); }
+    }
+
+    // 2. Fallback to LocalStorage
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) return JSON.parse(raw);
@@ -16,15 +48,34 @@
     return { dreams: [] };
   }
 
-  function saveData(data) {
+  async function saveData(data) {
+    // Save to LocalStorage first (instant feedback)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+    // Sync with Supabase in background
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (supabaseClient && user && user.isLoggedIn) {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          await supabaseClient
+            .from('user_data')
+            .upsert({
+              id: session.user.id,
+              dreams: data.dreams,
+              updated_at: new Date().toISOString()
+            });
+          console.log("Synced to Supabase");
+        }
+      } catch (e) { console.error("Supabase sync error:", e); }
+    }
   }
 
   function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
-  let appData = loadData();
+  let appData = { dreams: [] };
 
   // ─── State ─────────────────────────────────────────────────
   let currentDreamId = null;
@@ -1412,14 +1463,7 @@
 
   // ─── Event Bindings ───────────────────────────────────────
   function bindEvents() {
-    // Hero buttons
-    $('#btn-start-journey').addEventListener('click', () => {
-      document.getElementById('section-dreams').scrollIntoView({ behavior: 'smooth' });
-    });
-    $('#btn-add-dream-hero').addEventListener('click', () => {
-      editingDreamId = null;
-      openDreamModal();
-    });
+    // Hero buttons (removed)
     $('#btn-add-dream').addEventListener('click', () => {
       editingDreamId = null;
       openDreamModal();
@@ -1547,7 +1591,8 @@
   }
 
   // ─── Init ─────────────────────────────────────────────────
-  function init() {
+  async function init() {
+    appData = await loadData();
     seedIfEmpty();
     bindEvents();
     handleRoute();
