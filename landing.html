@@ -330,14 +330,22 @@
             try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
-                    // Store user info in localStorage for index.html compatibility
-                    localStorage.setItem('user', JSON.stringify({
+                    // Preserve existing user data (especially isPremium)
+                    const existingUser = JSON.parse(localStorage.getItem('user')) || {};
+                    const updatedUser = {
                         name: session.user.user_metadata.full_name,
                         email: session.user.email,
                         picture: session.user.user_metadata.avatar_url,
-                        isLoggedIn: true
-                    }));
-                    window.location.href = 'index.html';
+                        isLoggedIn: true,
+                        isPremium: existingUser.isPremium || false
+                    };
+                    localStorage.setItem('user', JSON.stringify(updatedUser));
+
+                    // Only redirect to dashboard if user has premium access
+                    if (updatedUser.isPremium) {
+                        window.location.href = 'index.html';
+                    }
+                    // Otherwise stay on landing page (user can see pricing)
                 }
             } catch (e) {
                 console.error("Session check error:", e);
