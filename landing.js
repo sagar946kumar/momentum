@@ -67,4 +67,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     `;
     document.head.appendChild(style);
+
+    // Razorpay Integration
+    const buyNowBtn = document.getElementById('buy-now-btn');
+    if (buyNowBtn) {
+        buyNowBtn.addEventListener('click', async () => {
+            const user = JSON.parse(localStorage.getItem('user'));
+
+            if (!user || !user.isLoggedIn) {
+                alert("Please login with Google first to purchase the Momentum Pass.");
+                // Smooth scroll to top to login
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+
+            const options = {
+                "key": "rzp_test_YOUR_KEY_HERE",
+                "amount": "19900", // ₹199 (paise)
+                "currency": "INR",
+                "name": "Momentum Tutorials",
+                "description": "Full Momentum Pass - Lifetime Access",
+                "handler": function (response) {
+                    console.log("Payment Successful:", response.razorpay_payment_id);
+
+                    // Update user in localStorage
+                    user.isPremium = true;
+                    localStorage.setItem('user', JSON.stringify(user));
+
+                    alert("Payment Successful! Welcome to Momentum Premium.");
+                    window.location.href = 'index.html';
+                },
+                "prefill": {
+                    "name": user.name || "",
+                    "email": user.email || ""
+                },
+                "theme": {
+                    "color": "#4ade80"
+                }
+            };
+            const rzp = new Razorpay(options);
+            rzp.open();
+        });
+    }
 });

@@ -17,11 +17,12 @@
 
     <!-- CSS -->
     <link rel="stylesheet" href="landing.css">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
         // Check if already logged in
         function checkAccess() {
             const user = JSON.parse(localStorage.getItem('user'));
-            if (user && user.isLoggedIn) {
+            if (user && user.isLoggedIn && user.isPremium) {
                 window.location.href = 'index.html';
             }
         }
@@ -151,65 +152,61 @@
 
 
 
-        <!-- Trial Section -->
-        <section class="trial" id="pricing">
-            <div class="container container-small">
-                <div class="trial-card">
-                    <h2 class="trial-title">Free 21-Day Trial</h2>
+        <!-- Premium Pricing Section -->
+        <section class="premium-pricing" id="pricing">
+            <div class="container">
+                <div class="premium-card">
+                    <div class="premium-badge">COMPLETE ACCESS</div>
 
-                    <div class="trial-features">
-                        <div class="trial-group">
-                            <h3>Build</h3>
+                    <div class="premium-header">
+                        <h2 class="premium-title">Full Momentum Pass</h2>
+                        <div class="price-container">
+                            <span class="currency">₹</span>
+                            <span class="price">199</span>
+                            <span class="period">/ One-Time</span>
+                        </div>
+                        <p class="premium-description">
+                            Everything you need to build discipline, execute consistently, and achieve your biggest
+                            goals.
+                        </p>
+                    </div>
+
+                    <div class="premium-features">
+                        <div class="feature-group">
+                            <h3><span class="group-icon">✅</span> Build</h3>
                             <ul>
-                                <li>Set Goals and track your progress</li>
-                                <li>Analyze habits with insights</li>
+                                <li>Set clear goals and track your progress</li>
+                                <li>Analyze your habits with powerful insights</li>
+                                <li>Design your personal Dream Plan</li>
                             </ul>
                         </div>
 
-                        <div class="trial-group">
-                            <h3>Execute</h3>
+                        <div class="feature-group">
+                            <h3><span class="group-icon">✅</span> Execute</h3>
                             <ul>
-                                <li>Get visual momentum made for you</li>
-                                <li>Build your own Dream Plans</li>
+                                <li>Get visual momentum tracking</li>
+                                <li>Structured daily action system</li>
+                                <li>Stay accountable with streak tracking</li>
                             </ul>
                         </div>
 
-                        <div class="trial-group">
-                            <h3>Achieve</h3>
+                        <div class="feature-group">
+                            <h3><span class="group-icon">✅</span> Achieve</h3>
                             <ul>
                                 <li>Compete against your past self</li>
-                                <li>Join streaks and build consistency</li>
+                                <li>Build unstoppable consistency</li>
+                                <li>Measure growth with real performance analytics</li>
                             </ul>
                         </div>
                     </div>
 
-                    <div class="trial-billing">
-                        <div class="billing-row today">
-                            <span>Billed today</span>
-                            <span>$0.00</span>
-                        </div>
-                        <div class="billing-row">
-                            <span>Monthly subscription</span>
-                            <span>$20.00</span>
-                        </div>
-                        <div class="billing-row">
-                            <span>Lifetime access (Optional upgrade)</span>
-                            <span>$30.00</span>
-                        </div>
+                    <div class="premium-cta">
+                        <p class="lifetime-text">Lifetime Access – Pay Once, Learn Forever</p>
+                        <button class="btn-premium-cta" id="buy-now-btn">
+                            Get Lifetime Access Now – ₹199
+                        </button>
+                        <p class="secure-text">Secure payment. Instant access. No recurring charges.</p>
                     </div>
-
-                    <div class="trial-links">
-                        <a href="#">Select Another Plan</a> &nbsp;&middot;&nbsp; <a href="#">Redeem Promo Code</a>
-                    </div>
-
-                    <button class="btn full-width google-login-btn trial-btn">Start 21-Day Free Trial</button>
-
-                    <p class="trial-disclaimer">
-                        After your free trial, you'll be charged $20.00 every month. You agree that the subscription
-                        automatically renews unless you cancel at least 24 hours before your renewal date. You can
-                        cancel your trial or subscription at any time from your account settings. Upgrade to lifetime
-                        access for a one-time payment of $30.00.
-                    </p>
                 </div>
             </div>
         </section>
