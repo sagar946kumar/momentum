@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const options = {
-                "key": "rzp_test_YOUR_KEY_HERE",
+                "key": "rzp_live_SLR8h7buAJQFlF",
                 "amount": "19900", // ₹199 (paise)
                 "currency": "INR",
                 "name": "Momentum Tutorials",
