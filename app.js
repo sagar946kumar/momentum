@@ -518,11 +518,11 @@ import { createClient } from '@supabase/supabase-js';
           // Goal is 0 → show NA
           html += `<td><span class="day-na">NA</span></td>`;
         } else if (needsTriState) {
-          // Tri-state: ✓ / ✗ / NA
+          // Tri-state: ✓ / NA / empty
           const val = tracking[d];
           let stateClass = 'state-empty';
           let label = '';
-          if (val === true) { stateClass = 'state-done'; label = '✓'; }
+          if (val === true) { stateClass = 'state-done'; label = '&#10003;'; }
           else if (val === 'na') { stateClass = 'state-na'; label = 'NA'; }
           html += `<td><button class="day-tri ${stateClass}" data-habit="${habit.id}" data-day="${d}">${label}</button></td>`;
         } else {
