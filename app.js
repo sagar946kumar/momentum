@@ -1554,10 +1554,7 @@ import { createClient } from '@supabase/supabase-js';
         editingDreamId = null;
         openDreamModal();
       } else {
-        triggerPremiumPayment(() => {
-          editingDreamId = null;
-          openDreamModal();
-        });
+        window.location.href = 'checkout.html';
       }
     });
 
@@ -1567,10 +1564,7 @@ import { createClient } from '@supabase/supabase-js';
         editingDreamId = null;
         openDreamModal();
       } else {
-        triggerPremiumPayment(() => {
-          editingDreamId = null;
-          openDreamModal();
-        });
+        window.location.href = 'checkout.html';
       }
     });
 

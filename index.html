@@ -31,7 +31,7 @@
     if (!isAuthCallback) {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user || !user.isLoggedIn) {
-        window.location.href = 'checkout.html';
+        window.location.href = 'landing.html';
       }
       // Removed strict premium check for now to allow viewing the dashboard
     }

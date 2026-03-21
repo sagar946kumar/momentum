@@ -328,17 +328,36 @@
                     ✓ Account verified: <span id="verify-phone"></span>
                 </div>
 
-                <!-- Referral Code Section -->
-                <div class="input-group" style="margin-bottom: 16px;">
+                <div class="input-group" style="margin-bottom: 24px;">
                     <label class="input-label">Have a Referral Code? (Optional)</label>
-                    <input type="text" id="referral-input" class="input-field" placeholder="Enter code here"
-                        style="text-transform: uppercase;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="referral-input" class="input-field" placeholder="25KCRORE"
+                            style="text-transform: uppercase; margin-bottom: 0;">
+                        <button class="btn-pay" id="btn-redeem"
+                            style="width: 100px; padding: 10px; font-size: 0.85rem;">Redeem</button>
+                    </div>
+                    <div id="referral-msg"
+                        style="margin-top: 10px; font-size: 0.8rem; font-weight: 600; display: none;">
+                    </div>
                 </div>
 
-                <button class="btn-full btn-pay" id="btn-razorpay">
-                    Pay ₹199 Now
-                </button>
-                <a class="back-link" id="btn-back-step2">Change Number</a>
+                <div id="payment-area">
+                    <button class="btn-full btn-pay" id="btn-razorpay">
+                        Pay ₹199 Now
+                    </button>
+                    <a class="back-link" id="btn-back-step2">Change Number</a>
+                </div>
+
+                <div id="success-area" class="hidden">
+                    <div
+                        style="background: rgba(0, 210, 160, 0.1); color: var(--accent); padding: 16px; border-radius: 16px; border: 1px solid var(--accent); margin-bottom: 24px;">
+                        <div style="font-weight: 800; font-size: 1rem; margin-bottom: 4px;">🎯 Code Applied!</div>
+                        <div style="font-size: 0.85rem; opacity: 0.9;">Your Lifetime Premium account is ready.</div>
+                    </div>
+                    <button class="btn-full btn-pay" id="btn-enter-premium">
+                        Go to Your Dashboard
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -407,12 +426,33 @@
         });
 
         // Step 3: Payment
+        $('#btn-redeem').addEventListener('click', () => {
+            const code = $('#referral-input').value.trim().toUpperCase();
+            const msg = $('#referral-msg');
+            msg.style.display = 'block';
+
+            if (code === '25KCRORE') {
+                msg.textContent = '✓ Referral code accepted!';
+                msg.style.color = 'var(--accent)';
+                $('#payment-area').style.display = 'none';
+                $('#success-area').classList.remove('hidden');
+            } else {
+                msg.textContent = '✗ Invalid referral code';
+                msg.style.color = '#EF4444';
+            }
+        });
+
+        $('#btn-enter-premium').addEventListener('click', () => {
+            user.isPremium = true;
+            localStorage.setItem('user', JSON.stringify(user));
+            window.location.href = 'index.html';
+        });
+
         $('#btn-razorpay').addEventListener('click', () => {
             const referralCode = $('#referral-input').value.trim().toUpperCase();
             if (referralCode === '25KCRORE') {
                 user.isPremium = true;
                 localStorage.setItem('user', JSON.stringify(user));
-                alert("Welcome to Momentum Premium (via Referral Code)!");
                 window.location.href = 'index.html';
                 return;
             }
