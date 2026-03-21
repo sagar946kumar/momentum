@@ -901,6 +901,7 @@ body {
   outline: none;
   transition: all var(--duration) var(--ease);
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .goal-input::-webkit-outer-spin-button,
@@ -1758,12 +1759,12 @@ body {
   top: 100%;
   left: 50%;
   transform: translateX(-50%) translateY(12px);
-  width: 280px;
+  width: 320px;
   background: #1A1D29;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 20px;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
   z-index: 9999;
   /* Ensure super high priority */
   opacity: 0;
@@ -1791,12 +1792,24 @@ body {
 }
 
 .streak-tooltip ul li::before {
+  content: '\1F3C6';
+  /* Trophy 🏆 */
+  font-size: 0.8rem;
+}
+
+/* Old broken content removed below */
+.streak-tooltip-dead-code {
+  display: none;
+}
+
+.momentum-last-bit {
   content: 'ðŸ†';
   font-size: 0.8rem;
 }
 
 .focus-tooltip ul li::before {
-  content: 'âš¡';
+  content: '\26A1';
+  /* Lightning ⚡ */
   font-size: 0.8rem;
 }
 
@@ -1811,7 +1824,8 @@ body {
 }
 
 .momentum-tooltip h4::before {
-  content: 'ðŸ’¡';
+  content: '\1F4A1';
+  /* Light Bulb 💡 */
 }
 
 .momentum-tooltip ul {
@@ -1830,7 +1844,8 @@ body {
 }
 
 .momentum-tooltip li::before {
-  content: 'â€¢';
+  content: '\2022';
+  /* Bullet • */
   position: absolute;
   left: 0;
   color: #60A5FA;

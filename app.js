@@ -1169,15 +1169,15 @@ import { createClient } from '@supabase/supabase-js';
       const prev = weeklyPcts[weeklyPcts.length - 2];
       const diff = last - prev;
       if (diff > 0) {
-        insights.push({ icon: '📈', text: `<strong>+${diff}%</strong> improvement compared to last week`, type: 'positive' });
+        insights.push({ icon: '\u{1F4C8}', text: `<strong>+${diff}%</strong> improvement compared to last week`, type: 'positive' });
       } else if (diff < 0) {
         insights.push({
-          icon: '📉',
+          icon: '\u{1F4C9}',
           text: `<strong>${diff}%</strong> drop from last week — Try breaking down <strong>"${escapeHtml(dreamStats[0]?.title || 'tasks')}"</strong> into smaller steps to regain momentum!`,
           type: 'warning'
         });
       } else {
-        insights.push({ icon: '➡️', text: 'Same performance as last week — time to level up!', type: 'neutral' });
+        insights.push({ icon: '\u27A1\uFE0F', text: 'Same performance as last week — time to level up!', type: 'neutral' });
       }
     }
 
@@ -1190,7 +1190,7 @@ import { createClient } from '@supabase/supabase-js';
       const moText = moDiff >= 0
         ? `You're performing <strong>${moDiff}% better</strong> than last month (${lastMonthPct}%)`
         : `Currently <strong>${Math.abs(moDiff)}% behind</strong> last month's pace (${lastMonthPct}%)`;
-      insights.push({ icon: '📅', text: moText, type: moDiff >= 0 ? 'positive' : 'neutral' });
+      insights.push({ icon: '\u{1F4C5}', text: moText, type: moDiff >= 0 ? 'positive' : 'neutral' });
     }
 
     // 3. Consistency check (weekdays vs weekends)
@@ -1213,19 +1213,19 @@ import { createClient } from '@supabase/supabase-js';
     const weekdayPct = weekdayTotal > 0 ? Math.round((weekdayDone / weekdayTotal) * 100) : 0;
     const weekendPct = weekendTotal > 0 ? Math.round((weekendDone / weekendTotal) * 100) : 0;
     if (weekendTotal > 0 && weekdayPct - weekendPct > 20) {
-      insights.push({ icon: '⚠️', text: `Consistency drops on weekends (<strong>${weekendPct}%</strong> vs <strong>${weekdayPct}%</strong> weekdays)`, type: 'warning' });
+      insights.push({ icon: '\u26A0\uFE0F', text: `Consistency drops on weekends (<strong>${weekendPct}%</strong> vs <strong>${weekdayPct}%</strong> weekdays)`, type: 'warning' });
     }
 
     // 4. Strongest dream
     const strongest = dreamStats.reduce((best, d) => (d.pct > (best ? best.pct : -1)) ? d : best, null);
     if (strongest && strongest.pct > 0) {
-      insights.push({ icon: '⭐', text: `<strong>"${escapeHtml(strongest.title)}"</strong> is your top performer at <strong>${strongest.pct}%</strong>`, type: 'positive' });
+      insights.push({ icon: '\u2B50', text: `<strong>"${escapeHtml(strongest.title)}"</strong> is your top performer at <strong>${strongest.pct}%</strong>`, type: 'positive' });
     }
 
     // 5. End-of-month prediction
     const predicted = predictEndOfMonth(yr, mo);
     if (predicted !== null) {
-      const predIcon = predicted >= 80 ? '🚀' : predicted >= 50 ? '📊' : '💪';
+      const predIcon = predicted >= 80 ? '\u{1F680}' : predicted >= 50 ? '\u{1F4CA}' : '\u{1F4AA}';
       insights.push({ icon: predIcon, text: `Predicted end-of-month: <strong>${predicted}%</strong> completion`, type: predicted >= 70 ? 'positive' : 'neutral' });
     }
 
@@ -1233,14 +1233,14 @@ import { createClient } from '@supabase/supabase-js';
     if (bestStreak >= 1) {
       const streakHabitText = bestStreakHabit ? ` in <strong>"${escapeHtml(bestStreakHabit)}"</strong>` : '';
       if (bestStreak >= 7) {
-        insights.push({ icon: '🔥', text: `Amazing <strong>${bestStreak}-day</strong> streak${streakHabitText}! Keep the fire alive!`, type: 'positive' });
+        insights.push({ icon: '\u{1F525}', text: `Amazing <strong>${bestStreak}-day</strong> streak${streakHabitText}! Keep the fire alive!`, type: 'positive' });
       } else if (bestStreak >= 3) {
-        insights.push({ icon: '💫', text: `<strong>${bestStreak}-day</strong> streak${streakHabitText} building — push for 7!`, type: 'neutral' });
+        insights.push({ icon: '\u{1F4AB}', text: `<strong>${bestStreak}-day</strong> streak${streakHabitText} building — push for 7!`, type: 'neutral' });
       }
     }
 
     if (insights.length === 0) {
-      insights.push({ icon: '💡', text: 'Start tracking habits to unlock personalized insights!', type: 'neutral' });
+      insights.push({ icon: '\u{1F4A1}', text: 'Start tracking habits to unlock personalized insights!', type: 'neutral' });
     }
 
     container.innerHTML = insights.map(i =>
@@ -1286,14 +1286,14 @@ import { createClient } from '@supabase/supabase-js';
     const container = $('#dash-achievements');
 
     const badges = [
-      { id: 'spark', icon: '🔥', name: 'First Spark', desc: '1-day streak', unlocked: bestStreak >= 1 },
-      { id: 'triple', icon: '⚡', name: 'Triple Threat', desc: '3-day streak', unlocked: bestStreak >= 3 },
-      { id: 'weekly', icon: '🗓️', name: 'Week Warrior', desc: '7-day streak', unlocked: bestStreak >= 7 },
-      { id: 'unstoppable', icon: '💪', name: 'Unstoppable', desc: '14-day streak', unlocked: bestStreak >= 14 },
-      { id: 'legend', icon: '🏆', name: 'Legend', desc: '30-day streak', unlocked: bestStreak >= 30 },
-      { id: 'perfect', icon: '💯', name: 'Perfectionist', desc: '100% today', unlocked: todayPct === 100 },
-      { id: 'halfwayMo', icon: '🎯', name: 'Half Way', desc: '50% monthly', unlocked: overallPct >= 50 },
-      { id: 'master', icon: '🚀', name: 'Momentum Master', desc: 'Score > 80', unlocked: momentum > 80 },
+      { id: 'spark', icon: '\u{1F525}', name: 'First Spark', desc: '1-day streak', unlocked: bestStreak >= 1 },
+      { id: 'triple', icon: '\u26A1', name: 'Triple Threat', desc: '3-day streak', unlocked: bestStreak >= 3 },
+      { id: 'weekly', icon: '\u{1F5D3}\uFE0F', name: 'Week Warrior', desc: '7-day streak', unlocked: bestStreak >= 7 },
+      { id: 'unstoppable', icon: '\u{1F4AA}', name: 'Unstoppable', desc: '14-day streak', unlocked: bestStreak >= 14 },
+      { id: 'legend', icon: '\u{1F3C6}', name: 'Legend', desc: '30-day streak', unlocked: bestStreak >= 30 },
+      { id: 'perfect', icon: '\u{1F4AF}', name: 'Perfectionist', desc: '100% today', unlocked: todayPct === 100 },
+      { id: 'halfwayMo', icon: '\u{1F3AF}', name: 'Half Way', desc: '50% monthly', unlocked: overallPct >= 50 },
+      { id: 'master', icon: '\u{1F680}', name: 'Momentum Master', desc: 'Score > 80', unlocked: momentum > 80 },
     ];
 
     container.innerHTML = badges.map(b =>
