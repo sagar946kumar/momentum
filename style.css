@@ -1,4 +1,4 @@
-﻿/* ===================================
+/* ===================================
    MOMENTUM â€“ Design System & Styles
    =================================== */
 
@@ -110,15 +110,33 @@ body {
   border-bottom: 1px solid var(--border-light);
 }
 
-.nav-logo {
+.footer-brand {
   font-family: var(--font-heading);
   font-weight: 800;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   color: var(--text-primary);
-  text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text-primary);
+  font-weight: 800;
+  font-size: 1.25rem;
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
+}
+
+.nav-logo-img {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
 }
 
 .logo-icon {
