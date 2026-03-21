@@ -331,7 +331,7 @@
                 <div class="input-group" style="margin-bottom: 24px;">
                     <label class="input-label">Have a Referral Code? (Optional)</label>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" id="referral-input" class="input-field" placeholder="25KCRORE"
+                        <input type="text" id="referral-input" class="input-field" placeholder="ENTER CODE"
                             style="text-transform: uppercase; margin-bottom: 0;">
                         <button class="btn-pay" id="btn-redeem"
                             style="width: 100px; padding: 10px; font-size: 0.85rem;">Redeem</button>
@@ -442,17 +442,33 @@
             }
         });
 
-        $('#btn-enter-premium').addEventListener('click', () => {
+        async function syncPremiumToSupabase() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                await supabase
+                    .from('user_data')
+                    .upsert({
+                        id: session.user.id,
+                        is_premium: true,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'id' });
+                console.log("Premium status synced to cloud.");
+            }
+        }
+
+        $('#btn-enter-premium').addEventListener('click', async () => {
             user.isPremium = true;
             localStorage.setItem('user', JSON.stringify(user));
+            await syncPremiumToSupabase();
             window.location.href = 'index.html';
         });
 
-        $('#btn-razorpay').addEventListener('click', () => {
+        $('#btn-razorpay').addEventListener('click', async () => {
             const referralCode = $('#referral-input').value.trim().toUpperCase();
             if (referralCode === '25KCRORE') {
                 user.isPremium = true;
                 localStorage.setItem('user', JSON.stringify(user));
+                await syncPremiumToSupabase();
                 window.location.href = 'index.html';
                 return;
             }
@@ -463,9 +479,10 @@
                 "currency": "INR",
                 "name": "Momentum",
                 "description": "Lifetime Momentum Pass",
-                "handler": function (response) {
+                "handler": async function (response) {
                     user.isPremium = true;
                     localStorage.setItem('user', JSON.stringify(user));
+                    await syncPremiumToSupabase();
                     alert("Welcome to Momentum Premium!");
                     window.location.href = 'index.html';
                 },

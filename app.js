@@ -28,13 +28,18 @@ import { createClient } from '@supabase/supabase-js';
         if (session) {
           const { data, error } = await supabaseClient
             .from('user_data')
-            .select('dreams')
+            .select('dreams, is_premium')
             .eq('id', session.user.id)
             .single();
 
-          if (data && data.dreams) {
+          if (data) {
             console.log("Loaded from Supabase");
-            return { dreams: data.dreams };
+            // Also sync premium status to local user object
+            if (data.is_premium) {
+              user.isPremium = true;
+              localStorage.setItem('user', JSON.stringify(user));
+            }
+            return { dreams: data.dreams || [], is_premium: data.is_premium || false };
           }
         }
       } catch (e) { console.error("Supabase load error:", e); }
@@ -63,9 +68,10 @@ import { createClient } from '@supabase/supabase-js';
             .upsert({
               id: session.user.id,
               dreams: data.dreams,
+              is_premium: user.isPremium || false,
               updated_at: new Date().toISOString()
             });
-          console.log("Synced to Supabase");
+          console.log("Synced to Supabase (including premium status)");
         }
       } catch (e) { console.error("Supabase sync error:", e); }
     }
