@@ -2533,7 +2533,7 @@ body {
     text-align: center;
   }
 
-  .dash-stat-grid {
+  .dash-stats-grid {
     grid-template-columns: 1fr !important;
     gap: 16px;
   }
@@ -2569,113 +2569,5 @@ body {
 }
 
 
-/* ===================================
-   DASHBOARD MOBILE OPTIMIZATIONS
-   =================================== */
 
-@media (max-width: 768px) {
-  /* 1. Momentum Score Stat Cards Swipe */
-  .dash-stats-grid {
-    display: flex !important;
-    overflow-x: auto !important;
-    scroll-snap-type: x mandatory;
-    gap: 16px !important;
-    padding: 10px 16px 20px !important;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .dash-stats-grid::-webkit-scrollbar { display: none; }
-  
-  .dash-stats-grid .stat-card {
-    min-width: 85% !important;
-    scroll-snap-align: center;
-    flex-shrink: 0;
-    margin-bottom: 0 !important;
-  }
-
-  /* 2. Charts Row Swipe (Pie + Weekly Trend) */
-  .dash-charts-row {
-    display: flex !important;
-    overflow-x: auto !important;
-    scroll-snap-type: x mandatory;
-    gap: 16px !important;
-    padding: 10px 16px 20px !important;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .dash-charts-row::-webkit-scrollbar { display: none; }
-
-  .dash-charts-row .dash-card {
-    min-width: 90% !important;
-    scroll-snap-align: center;
-    flex-shrink: 0;
-    margin-bottom: 0 !important;
-  }
-
-  /* 3. Smart Insights Swipe */
-  .insights-list {
-    display: flex !important;
-    overflow-x: auto !important;
-    scroll-snap-type: x mandatory;
-    gap: 12px !important;
-    padding-bottom: 12px;
-    scrollbar-width: none;
-  }
-  .insights-list::-webkit-scrollbar { display: none; }
-
-  .insight-row {
-    min-width: 85% !important;
-    scroll-snap-align: center;
-    flex-shrink: 0;
-    padding: 16px !important;
-    margin-bottom: 0 !important;
-  }
-
-  /* 4. Top Habits Swipe */
-  .top-habits-list {
-    display: flex !important;
-    overflow-x: auto !important;
-    scroll-snap-type: x mandatory;
-    gap: 12px !important;
-    padding-bottom: 12px;
-    scrollbar-width: none;
-  }
-  .top-habits-list::-webkit-scrollbar { display: none; }
-
-  /* Habit Item Card for swipe */
-  .habit-item {
-    min-width: 80% !important;
-    scroll-snap-align: center;
-    flex-shrink: 0;
-    background: var(--white);
-    padding: 16px !important;
-    margin-bottom: 0 !important;
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-  }
-
-  /* 5. Dreams Comparison Swipe */
-  .dreams-comparison {
-    display: flex !important;
-    overflow-x: auto !important;
-    scroll-snap-type: x mandatory;
-    gap: 12px !important;
-    padding-bottom: 12px;
-    scrollbar-width: none;
-  }
-  .dreams-comparison::-webkit-scrollbar { display: none; }
-
-  .dream-compare-item {
-    min-width: 85% !important;
-    scroll-snap-align: center;
-    flex-shrink: 0;
-    margin-bottom: 0 !important;
-  }
-
-  /* Chart Canvas Adjustments */
-  .chart-wrapper {
-    height: 300px !important;
-    width: 100% !important;
-  }
-}
 

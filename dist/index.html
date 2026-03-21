@@ -28,9 +28,9 @@
       // Removed strict premium check for now to allow viewing the dashboard
     }
   </script>
-  <script type="module" crossorigin src="/assets/main-BfAdJIdB.js"></script>
+  <script type="module" crossorigin src="/assets/main-96Ra3WGA.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/index-ruigzImx.js">
-  <link rel="stylesheet" crossorigin href="/assets/main-DxdgAbsE.css">
+  <link rel="stylesheet" crossorigin href="/assets/main-CbBk4hGI.css">
 </head>
 
 <body>
@@ -230,55 +230,50 @@
   <section id="page-dashboard" class="page">
 
     <div class="dashboard-header">
-      <h1 class="dashboard-title">
-        <img src="/assets/logo-B7bk5Ofa.png" alt="Momentum"
-          style="height: 48px; width: auto; vertical-align: middle; margin-right: 12px; border-radius: 8px;" />
-        Momentum Dashboard
-      </h1>
+      <h1 class="dashboard-title">Momentum Dashboard</h1>
       <p class="dashboard-sub">Your analytics command center</p>
     </div>
 
     <!-- Top Stats Row -->
-    <div class="stat-card stat-card-momentum">
-      <div class="stat-icon">
-        <img src="/assets/logo-B7bk5Ofa.png" alt="Momentum" style="height: 24px; width: auto; border-radius: 4px;" />
+    <div class="dash-stats-grid">
+      <div class="stat-card stat-card-momentum">
+        <div class="stat-icon">◆</div>
+        <div class="stat-value"><span id="dash-momentum">0</span><small>/100</small></div>
+        <div class="stat-sub" id="dash-momentum-sub">STARTING</div>
+        <div class="stat-label">Momentum Score</div>
+        <!-- Tooltip for hover -->
+        <div class="momentum-tooltip" id="dash-momentum-tips">
+          <h4>Momentum Analysis</h4>
+          <ul>
+            <li>Analyze your habits...</li>
+          </ul>
+        </div>
       </div>
-      <div class="stat-value"><span id="dash-momentum">0</span><small>/100</small></div>
-      <div class="stat-sub" id="dash-momentum-sub">STARTING</div>
-      <div class="stat-label">Momentum Score</div>
-      <!-- Tooltip for hover -->
-      <div class="momentum-tooltip" id="dash-momentum-tips">
-        <h4>Momentum Analysis</h4>
-        <ul>
-          <li>Analyze your habits...</li>
-        </ul>
+      <div class="stat-card stat-card-streak">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-value" id="dash-streak">0</div>
+        <div class="stat-sub" id="dash-streak-habit"></div>
+        <div class="stat-label">Best Streak</div>
+        <div class="momentum-tooltip streak-tooltip">
+          <h4>Top 3 Streaks</h4>
+          <ul id="dash-streak-list"></ul>
+        </div>
       </div>
-    </div>
-    <div class="stat-card stat-card-streak">
-      <div class="stat-icon">🔥</div>
-      <div class="stat-value" id="dash-streak">0</div>
-      <div class="stat-sub" id="dash-streak-habit"></div>
-      <div class="stat-label">Best Streak</div>
-      <div class="momentum-tooltip streak-tooltip">
-        <h4>Top 3 Streaks</h4>
-        <ul id="dash-streak-list"></ul>
+      <div class="stat-card stat-card-today">
+        <div class="stat-icon">✦</div>
+        <div class="stat-value" id="dash-today">0%</div>
+        <div class="stat-label">Today's Completion</div>
       </div>
-    </div>
-    <div class="stat-card stat-card-today">
-      <div class="stat-icon">✦</div>
-      <div class="stat-value" id="dash-today">0%</div>
-      <div class="stat-label">Today's Completion</div>
-    </div>
-    <div class="stat-card stat-card-focus">
-      <div class="stat-icon">⭐</div>
-      <div class="stat-value" id="dash-focus-dream">—</div>
-      <div class="stat-sub" id="dash-focus-pct"></div>
-      <div class="stat-label">Focus Dream</div>
-      <div class="momentum-tooltip focus-tooltip">
-        <h4>Energy Analysis</h4>
-        <ul id="dash-focus-analysis"></ul>
+      <div class="stat-card stat-card-focus">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-value" id="dash-focus-dream">—</div>
+        <div class="stat-sub" id="dash-focus-pct"></div>
+        <div class="stat-label">Focus Dream</div>
+        <div class="momentum-tooltip focus-tooltip">
+          <h4>Energy Analysis</h4>
+          <ul id="dash-focus-analysis"></ul>
+        </div>
       </div>
-    </div>
     </div>
 
     <!-- Charts Row: Pie + Weekly Trend -->
