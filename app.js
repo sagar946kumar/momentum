@@ -225,11 +225,23 @@ import { createClient } from '@supabase/supabase-js';
   function addHabit(dreamId, name) {
     const dream = getDream(dreamId);
     if (!dream) return null;
+
+    const now = new Date();
+    const mk = monthKey(now.getFullYear(), now.getMonth());
+    const today = now.getDate();
+
+    // Auto-fill NA for all prior days of THIS month only
+    const tracking = {};
+    tracking[mk] = {};
+    for (let d = 1; d < today; d++) {
+      tracking[mk][d] = 'na';
+    }
+
     const habit = {
       id: generateId(),
       name: name.trim(),
-      createdAt: new Date().toISOString(),
-      tracking: {},
+      createdAt: now.toISOString(),
+      tracking: tracking, // Pre-filled with NA for past days
       goals: {},
     };
     dream.habits.push(habit);
@@ -568,24 +580,18 @@ import { createClient } from '@supabase/supabase-js';
       </td>`;
       html += `<td class="goal-col"><input type="number" class="goal-input" data-habit="${habit.id}" value="${progress.goal}" min="0" max="${days}" /></td>`;
 
-      const needsTriState = progress.goal > 0 && progress.goal < days;
-
       for (let d = 1; d <= days; d++) {
         if (progress.goal === 0) {
           // Goal is 0 → show NA
           html += `<td><span class="day-na">NA</span></td>`;
-        } else if (needsTriState) {
-          // Tri-state: ✓ / NA / empty
+        } else {
+          // EVERY habit now uses Tri-state: ✓ / NA / empty
           const val = tracking[d];
           let stateClass = 'state-empty';
           let label = '';
           if (val === true) { stateClass = 'state-done'; label = '&#10003;'; }
           else if (val === 'na') { stateClass = 'state-na'; label = 'NA'; }
           html += `<td><button class="day-tri ${stateClass}" data-habit="${habit.id}" data-day="${d}">${label}</button></td>`;
-        } else {
-          // Regular checkbox (goal = total days)
-          const checked = tracking[d] ? 'checked' : '';
-          html += `<td><input type="checkbox" class="day-checkbox" data-habit="${habit.id}" data-day="${d}" ${checked} /></td>`;
         }
       }
 
@@ -628,18 +634,7 @@ import { createClient } from '@supabase/supabase-js';
     html += '</tr></tbody></table>';
     container.innerHTML = html;
 
-    // Regular checkbox events (goal = total days)
-    container.querySelectorAll('.day-checkbox').forEach(cb => {
-      cb.addEventListener('change', () => {
-        toggleHabitDay(currentDreamId, cb.dataset.habit, mk, parseInt(cb.dataset.day));
-        renderHabitGrid(dream);
-        renderDailySummary(dream);
-        renderMonthlySummary(dream);
-        updateDreamProgressBar(dream);
-      });
-    });
-
-    // Tri-state button events (goal < total days)
+    // Tri-state button events (Unified logic for all cells)
     container.querySelectorAll('.day-tri').forEach(btn => {
       btn.addEventListener('click', () => {
         cycleHabitDay(currentDreamId, btn.dataset.habit, mk, parseInt(btn.dataset.day));
