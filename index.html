@@ -517,6 +517,10 @@
           }
 
           localStorage.removeItem('user');
+          // Clear all momentum-related localStorage items to be safe
+          for (let key in localStorage) {
+            if (key.startsWith('momentum_data_')) localStorage.removeItem(key);
+          }
           window.location.href = 'landing.html';
         });
       } else {

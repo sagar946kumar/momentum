@@ -481,15 +481,16 @@
                 "description": "Lifetime Momentum Pass",
                 "handler": async function (response) {
                     user.isPremium = true;
+                    // Persist the phone used for payment
                     localStorage.setItem('user', JSON.stringify(user));
                     await syncPremiumToSupabase();
                     alert("Welcome to Momentum Premium!");
                     window.location.href = 'index.html';
                 },
                 "prefill": {
-                    "name": user.name,
-                    "email": user.email,
-                    "contact": user.phone
+                    "name": user.name || "",
+                    "email": user.email || "",
+                    "contact": user.phone || ""
                 },
                 "theme": { "color": "#4A7CFF" }
             };

@@ -8,7 +8,7 @@ import { createClient } from '@supabase/supabase-js';
   'use strict';
 
   // ─── Data Layer (Supabase + Local Fallback) ───────────────────
-  const STORAGE_KEY = 'momentum_data';
+  let STORAGE_KEY = 'momentum_data'; // Will be updated with userId
   const SUPABASE_URL = window.ENV?.SUPABASE_URL || 'YOUR_SUPABASE_URL';
   const SUPABASE_ANON_KEY = window.ENV?.SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
 
@@ -45,8 +45,12 @@ import { createClient } from '@supabase/supabase-js';
       } catch (e) { console.error("Supabase load error:", e); }
     }
 
-    // 2. Fallback to LocalStorage
+    // 2. Fallback to LocalStorage (User-Specific)
     try {
+      if (user && user.isLoggedIn) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) STORAGE_KEY = 'momentum_data_' + session.user.id;
+      }
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) return JSON.parse(raw);
     } catch (e) { /* ignore */ }
@@ -1556,7 +1560,12 @@ import { createClient } from '@supabase/supabase-js';
     // Hero buttons (Dream addition gated by premium)
     $('#btn-add-dream').addEventListener('click', () => {
       const user = JSON.parse(localStorage.getItem('user'));
-      if (user && user.isPremium) {
+      const dreamCount = appData.dreams.length;
+
+      // Allow adding a dream if:
+      // 1. User is premium
+      // 2. User has fewer than 2 dreams (1 default + 1 new)
+      if ((user && user.isPremium) || dreamCount < 2) {
         editingDreamId = null;
         openDreamModal();
       } else {
@@ -1566,7 +1575,9 @@ import { createClient } from '@supabase/supabase-js';
 
     $('#btn-add-dream-empty').addEventListener('click', () => {
       const user = JSON.parse(localStorage.getItem('user'));
-      if (user && user.isPremium) {
+      const dreamCount = appData.dreams.length;
+
+      if ((user && user.isPremium) || dreamCount < 2) {
         editingDreamId = null;
         openDreamModal();
       } else {
@@ -1680,9 +1691,7 @@ import { createClient } from '@supabase/supabase-js';
     if (appData.dreams.length > 0) return;
 
     const dreams = [
-      { title: 'Run 42.195 KM', habits: ['Morning Run', 'Stretching', 'Diet Plan', 'Sleep 8 Hours'] },
-      { title: 'Clear CDS Examination', habits: ['English', 'Mathematics', 'General Studies', 'SSB Preparation'] },
-      { title: 'Build 15+ Startups', habits: ['Ideation', 'Coding', 'Marketing', 'Networking'] },
+      { title: 'Get Fit before 2026', habits: ['Morning Yoga', 'Hydration (8 Cups)', '10,000 Steps', 'No Late Snacks'] },
     ];
 
     dreams.forEach(d => {
