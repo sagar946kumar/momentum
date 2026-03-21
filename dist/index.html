@@ -12,7 +12,8 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script>
     // Auth check - Force Google Sign-in
     // If returning from OAuth, don't redirect yet (Supabase needs to process URL)
@@ -22,12 +23,14 @@
     if (!isAuthCallback) {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user || !user.isLoggedIn) {
-        window.location.href = 'landing.html';
+        window.location.href = 'checkout.html';
       }
+      // Removed strict premium check for now to allow viewing the dashboard
     }
   </script>
-  <script type="module" crossorigin src="/assets/index-D1SSmcEP.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-BmEFyb0G.css">
+  <script type="module" crossorigin src="/assets/main-CU1yhfY3.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/index-ruigzImx.js">
+  <link rel="stylesheet" crossorigin href="/assets/main-Dn-CzmkA.css">
 </head>
 
 <body>
@@ -396,6 +399,10 @@
       </div>
       <div class="modal-body">
         <p id="confirm-message">Are you sure you want to delete this?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="btn-confirm-cancel">Cancel</button>
+        <button class="btn btn-danger" id="btn-confirm-ok">Delete</button>
       </div>
     </div>
   </div>

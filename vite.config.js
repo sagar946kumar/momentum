@@ -8,6 +8,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         landing: resolve(__dirname, 'landing.html'),
         login: resolve(__dirname, 'login.html'),
+        checkout: resolve(__dirname, 'checkout.html'),
       },
     },
   },

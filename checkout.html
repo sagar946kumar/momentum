@@ -327,6 +327,14 @@
                     style="background: rgba(0, 210, 160, 0.1); color: var(--accent); padding: 12px; border-radius: 12px; font-size: 0.85rem; margin-bottom: 24px; font-weight: 600;">
                     ✓ Account verified: <span id="verify-phone"></span>
                 </div>
+
+                <!-- Referral Code Section -->
+                <div class="input-group" style="margin-bottom: 16px;">
+                    <label class="input-label">Have a Referral Code? (Optional)</label>
+                    <input type="text" id="referral-input" class="input-field" placeholder="Enter code here"
+                        style="text-transform: uppercase;">
+                </div>
+
                 <button class="btn-full btn-pay" id="btn-razorpay">
                     Pay ₹199 Now
                 </button>
@@ -400,6 +408,15 @@
 
         // Step 3: Payment
         $('#btn-razorpay').addEventListener('click', () => {
+            const referralCode = $('#referral-input').value.trim().toUpperCase();
+            if (referralCode === '25KCRORE') {
+                user.isPremium = true;
+                localStorage.setItem('user', JSON.stringify(user));
+                alert("Welcome to Momentum Premium (via Referral Code)!");
+                window.location.href = 'index.html';
+                return;
+            }
+
             const options = {
                 "key": "rzp_live_SLR8h7buAJQFlF",
                 "amount": "19900",
