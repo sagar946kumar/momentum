@@ -2394,3 +2394,158 @@ body {
   clip: rect(0, 0, 0, 0);
   border: 0;
 }
+
+/* ===================================
+   MOBILE RESPONSIVE
+   =================================== */
+
+@media (max-width: 768px) {
+  /* Navbar & Header */
+  .navbar {
+    padding: 0 16px;
+    height: auto;
+    min-height: 64px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 16px !important;
+  }
+  
+  .nav-right {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+  }
+
+  .nav-links {
+    gap: 4px;
+  }
+
+  .nav-link {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .user-profile {
+    border-left: none;
+    padding-left: 0;
+    margin-left: 0;
+    gap: 8px;
+  }
+
+  .nav-user-name {
+    display: none;
+  }
+
+  /* Grid Layouts Stacked */
+  .dreams-grid,
+  .stats-grid,
+  .dashboard-main,
+  .hero-actions,
+  .dash-main-grid,
+  .stat-card-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* THE BIG FIX: Habit Tracker Scroll */
+  .execution-section {
+    padding: 16px 8px;
+  }
+
+  .habit-tracker-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    border-radius: var(--radius-md);
+  }
+
+  .habit-grid {
+    min-width: 1100px;
+    table-layout: fixed;
+  }
+
+  /* Sticky First Column for Name */
+  .habit-name-col {
+    position: sticky;
+    left: 0;
+    z-index: 50;
+    background: white !important;
+    width: 140px !important;
+    min-width: 140px !important;
+    box-shadow: 4px 0 8px rgba(0,0,0,0.05);
+  }
+  
+  .habit-name {
+    position: sticky;
+    left: 0;
+    z-index: 50;
+    background: white !important;
+  }
+
+  .day-header, .day-cell, .summary-day {
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 48px;
+  }
+
+  /* Header & Navigation Spacing */
+  .dream-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .month-picker-row {
+    flex-direction: column;
+    gap: 20px;
+    align-items: stretch;
+  }
+
+  .month-grid {
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+  }
+
+  .current-month-label {
+    font-size: 1.25rem;
+    text-align: center;
+  }
+
+  .dash-stat-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  .chart-card {
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-headline {
+    font-size: 2.5rem;
+  }
+  
+  .section-dreams {
+    padding: 40px 16px;
+  }
+  
+  .dream-card {
+    padding: 24px 20px;
+  }
+  
+  .month-btn {
+    padding: 8px 4px;
+    font-size: 0.7rem;
+  }
+
+  .dream-switcher {
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 1.1rem;
+  }
+}
