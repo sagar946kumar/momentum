@@ -489,8 +489,13 @@ import { createClient } from '@supabase/supabase-js';
     html += '<th class="habit-name-col">Habit</th>';
     html += '<th class="goal-col">Goal</th>';
 
+    const now = new Date();
+    const isThisMonth = (currentYear === now.getFullYear() && currentMonth === now.getMonth());
+    const todayNum = now.getDate();
+
     for (let d = 1; d <= days; d++) {
-      html += `<th class="day-header">${d}</th>`;
+      const todayClass = (isThisMonth && d === todayNum) ? 'is-today' : '';
+      html += `<th class="day-header ${todayClass}">${d}</th>`;
     }
     html += '<th class="progress-col">Done</th>';
     html += '<th class="progress-end-col">Progress</th>';

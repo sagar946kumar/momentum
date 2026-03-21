@@ -819,6 +819,26 @@ body {
   padding: 8px 1px;
 }
 
+.day-header.is-today {
+  color: #fff !important;
+  position: relative;
+  z-index: 5;
+}
+
+.day-header.is-today::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  height: 26px;
+  background: var(--blue);
+  border-radius: 50%;
+  z-index: -1;
+  box-shadow: 0 4px 12px rgba(74, 124, 255, 0.3);
+}
+
 .habit-grid th.habit-name-col {
   text-align: left;
   padding-left: 8px;
