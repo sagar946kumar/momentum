@@ -139,6 +139,48 @@ import { createClient } from '@supabase/supabase-js';
 
   window.addEventListener('hashchange', handleRoute);
 
+  // ─── Realtime Sync ──────────────────────────────────────────
+  async function setupSupabaseRealtime() {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!supabaseClient || !user || !user.isLoggedIn) return;
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session) return;
+
+    console.log("Setting up Supabase Realtime for:", session.user.id);
+
+    // Listen for changes to the user_data table for the current user
+    supabaseClient
+      .channel('user-data-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'user_data',
+          filter: `id=eq.${session.user.id}`
+        },
+        (payload) => {
+          console.log('Realtime change detected:', payload);
+          if (payload.new && payload.new.dreams) {
+            // Check if data actually changed to avoid infinite loops or unnecessary renders
+            const remoteDreams = JSON.stringify(payload.new.dreams);
+            const localDreams = JSON.stringify(appData.dreams);
+
+            if (remoteDreams !== localDreams) {
+              console.log("Updating local data from Realtime...");
+              appData.dreams = payload.new.dreams;
+              // Re-save to localstorage for local persistence
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+              // Re-render current page to show new data
+              handleRoute();
+            }
+          }
+        }
+      )
+      .subscribe();
+  }
+
   // ─── Dream CRUD ────────────────────────────────────────────
   function addDream(title) {
     const dream = {
@@ -1655,6 +1697,7 @@ import { createClient } from '@supabase/supabase-js';
     seedIfEmpty();
     bindEvents();
     handleRoute();
+    setupSupabaseRealtime();
   }
 
   document.addEventListener('DOMContentLoaded', init);
