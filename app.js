@@ -1463,14 +1463,68 @@ import { createClient } from '@supabase/supabase-js';
 
   // ─── Event Bindings ───────────────────────────────────────
   function bindEvents() {
-    // Hero buttons (removed)
+    // Function to trigger Razorpay payment
+    function triggerPremiumPayment(callback) {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (!user) {
+        alert("Please login first.");
+        return;
+      }
+
+      const options = {
+        "key": "rzp_live_SLR8h7buAJQFlF",
+        "amount": "19900", // ₹199
+        "currency": "INR",
+        "name": "Momentum Tutorials",
+        "description": "Lifetime Momentum Pass - Unlock Dreams",
+        "handler": function (response) {
+          console.log("Payment Successful:", response.razorpay_payment_id);
+          user.isPremium = true;
+          localStorage.setItem('user', JSON.stringify(user));
+          alert("Payment Successful! You can now add your dreams.");
+          if (callback) callback();
+        },
+        "prefill": {
+          "name": user.name || "",
+          "email": user.email || ""
+        },
+        "theme": { "color": "#4A7CFF" }
+      };
+
+      try {
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        console.error("Razorpay error:", err);
+        alert("Could not open payment gateway. Please check your connection.");
+      }
+    }
+
+    // Hero buttons (Dream addition gated by premium)
     $('#btn-add-dream').addEventListener('click', () => {
-      editingDreamId = null;
-      openDreamModal();
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user && user.isPremium) {
+        editingDreamId = null;
+        openDreamModal();
+      } else {
+        triggerPremiumPayment(() => {
+          editingDreamId = null;
+          openDreamModal();
+        });
+      }
     });
+
     $('#btn-add-dream-empty').addEventListener('click', () => {
-      editingDreamId = null;
-      openDreamModal();
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user && user.isPremium) {
+        editingDreamId = null;
+        openDreamModal();
+      } else {
+        triggerPremiumPayment(() => {
+          editingDreamId = null;
+          openDreamModal();
+        });
+      }
     });
 
     // Dream modal

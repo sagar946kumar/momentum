@@ -13,6 +13,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <script type="module">
     // Vite uses import.meta.env
     window.ENV = {
@@ -30,11 +31,9 @@
     if (!isAuthCallback) {
       const user = JSON.parse(localStorage.getItem('user'));
       if (!user || !user.isLoggedIn) {
-        window.location.href = 'landing.html';
-      } else if (!user.isPremium) {
-        // Redirect non-premium users to pricing
-        window.location.href = 'landing.html';
+        window.location.href = 'checkout.html';
       }
+      // Removed strict premium check for now to allow viewing the dashboard
     }
   </script>
 </head>
