@@ -1695,6 +1695,24 @@ import { createClient } from '@supabase/supabase-js';
     });
   }
 
+  // Refetch data from Supabase (e.g. when returning to the tab)
+  async function refetchData() {
+    console.log("Sync check: checking for remote updates...");
+    const remoteData = await loadData();
+    if (JSON.stringify(remoteData.dreams) !== JSON.stringify(appData.dreams)) {
+      console.log("Remote changes detected during sync check, updating UI.");
+      appData.dreams = remoteData.dreams;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+      handleRoute();
+    }
+  }
+
+  // Handle Visibility and Focus (especially for Mobile browsers)
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') refetchData();
+  });
+  window.addEventListener('focus', refetchData);
+
   // ─── Init ─────────────────────────────────────────────────
   async function init() {
     appData = await loadData();
@@ -1702,8 +1720,12 @@ import { createClient } from '@supabase/supabase-js';
     bindEvents();
     handleRoute();
     setupSupabaseRealtime();
+
+    // Initial sync check shortly after load
+    setTimeout(refetchData, 2000);
   }
 
   document.addEventListener('DOMContentLoaded', init);
 
 })();
+

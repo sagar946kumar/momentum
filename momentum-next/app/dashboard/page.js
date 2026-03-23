@@ -121,12 +121,50 @@ export default function DashboardPage() {
         }
 
         // Load app data
-        loadData(supabase).then(data => {
-            const seeded = seedIfEmpty(data);
-            setAppData(seeded);
-            if (seeded !== data) saveData(seeded, supabase);
-        });
-    }, []);
+        const fetchData = () => {
+            loadData(supabase).then(data => {
+                const seeded = seedIfEmpty(data);
+                setAppData(seeded);
+                if (seeded !== data) saveData(seeded, supabase);
+            });
+        };
+
+        fetchData();
+
+        // Handle visibility changes (Mobile tab refocus)
+        const handleVisibility = () => { if (document.visibilityState === 'visible') fetchData(); };
+        window.addEventListener('visibilitychange', handleVisibility);
+        window.addEventListener('focus', fetchData);
+
+        // Real-time listener
+        let channel = null;
+        if (supabase) {
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                if (session) {
+                    channel = supabase
+                        .channel('user_data_sync')
+                        .on('postgres_changes', {
+                            event: '*',
+                            schema: 'public',
+                            table: 'user_data',
+                            filter: `id=eq.${session.user.id}`
+                        }, (payload) => {
+                            if (payload.new && payload.new.dreams) {
+                                console.log('Realtime update received from another device');
+                                setAppData({ dreams: payload.new.dreams });
+                            }
+                        })
+                        .subscribe();
+                }
+            });
+        }
+
+        return () => {
+            window.removeEventListener('visibilitychange', handleVisibility);
+            window.removeEventListener('focus', fetchData);
+            if (channel) supabase.removeChannel(channel);
+        };
+    }, [supabase]);
 
     // ─── Save helper ────────────────────────────────────────
     const persist = useCallback((data) => {
@@ -152,7 +190,17 @@ export default function DashboardPage() {
 
     // ─── Habit CRUD ─────────────────────────────────────────
     function addHabit(dreamId, name) {
-        const habit = { id: generateId(), name: name.trim(), createdAt: new Date().toISOString(), tracking: {}, goals: {} };
+        const today = new Date().getDate();
+        const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
+        const tracking = {};
+        tracking[mk] = {};
+
+        // Auto-fill NA for all prior days of THIS month only
+        for (let d = 1; d < today; d++) {
+            tracking[mk][d] = 'na';
+        }
+
+        const habit = { id: generateId(), name: name.trim(), createdAt: new Date().toISOString(), tracking, goals: {} };
         const newData = { ...appData, dreams: appData.dreams.map(d => d.id === dreamId ? { ...d, habits: [...d.habits, habit] } : d) };
         persist(newData);
     }
