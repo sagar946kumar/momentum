@@ -659,7 +659,21 @@ export default function DashboardPage() {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmMsg, setConfirmMsg] = useState('');
     const [deletingType, setDeletingType] = useState(null);
-    const [deletingId, setDeletingId] = useState(null);
+    const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
+    const [yearDropdownOpen, setYearDropdownOpen] = useState(false);
+
+    useEffect(() => {
+        function handleOutsideClick(e) {
+            if (!e.target.closest('#month-dropdown')) {
+                setMonthDropdownOpen(false);
+            }
+            if (!e.target.closest('#year-dropdown')) {
+                setYearDropdownOpen(false);
+            }
+        }
+        document.addEventListener('click', handleOutsideClick);
+        return () => document.removeEventListener('click', handleOutsideClick);
+    }, []);
 
     // ─── Lifted Map Your Day Flow State ─────────────────────
     const [flowState, setFlowState] = useState(() => {
@@ -1172,53 +1186,92 @@ export default function DashboardPage() {
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+        const years = [];
+        for (let y = 2000; y <= 2050; y++) {
+            years.push(y);
+        }
+
         return (
             <>
-                <div className="dream-header">
-                    <button className="btn-back" onClick={() => setPage('landing')}>
-                        ← Back to Dreams
-                    </button>
-                    <div className="dream-title-row">
-                        <div className="dream-switcher-wrapper">
-                            <select className="dream-switcher" value={currentDreamId} onChange={e => setCurrentDreamId(e.target.value)}>
+                <div className="dream-controls-row">
+                    <div className="dream-controls-left">
+                        <button className="btn-back-arrow" onClick={() => setPage('landing')} title="Back to Dreams">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M19 12H5M12 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <div className="dream-dropdown-wrapper">
+                            <select className="dream-switcher-pill" value={currentDreamId} onChange={e => setCurrentDreamId(e.target.value)}>
                                 {appData.dreams.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
                             </select>
-                            <svg className="dream-switcher-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6" /></svg>
+                            <svg className="dream-switcher-arrow-pill" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M6 9l6 6 6-6" />
+                            </svg>
                         </div>
                     </div>
-                    <div className="month-picker-row">
-                        <div className="current-month-label">{monthNames[currentMonth]} {currentYear}</div>
-                        <div className="month-picker">
-                            <div className="year-selector">
-                                <button className="app-btn-icon-sm" onClick={() => setCurrentYear(y => y - 1)}>‹</button>
-                                <span className="year-label">{currentYear}</span>
-                                <button className="app-btn-icon-sm" onClick={() => setCurrentYear(y => y + 1)}>›</button>
+
+                    <div className="dream-controls-center">
+                        <div className={`custom-dropdown${monthDropdownOpen ? ' open' : ''}`} id="month-dropdown">
+                            <button className="dropdown-trigger" onClick={(e) => { e.stopPropagation(); setMonthDropdownOpen(prev => !prev); setYearDropdownOpen(false); }}>
+                                {monthNames[currentMonth]} <span className="arrow">▼</span>
+                            </button>
+                            <div className={`dropdown-menu${monthDropdownOpen ? ' show' : ''}`}>
+                                {monthNames.map((name, idx) => (
+                                    <button
+                                        key={name}
+                                        className={`dropdown-item${idx === currentMonth ? ' active' : ''}`}
+                                        onClick={() => {
+                                            setCurrentMonth(idx);
+                                            setMonthDropdownOpen(false);
+                                        }}
+                                    >
+                                        {name}
+                                    </button>
+                                ))}
                             </div>
-                            <div className="month-grid">
-                                {shortMonths.map((m, i) => (
-                                    <button key={m} className={`month-btn${i === currentMonth ? ' active' : ''}`} onClick={() => setCurrentMonth(i)}>{m}</button>
+                        </div>
+
+                        <div className={`custom-dropdown${yearDropdownOpen ? ' open' : ''}`} id="year-dropdown">
+                            <button className="dropdown-trigger" onClick={(e) => {
+                                e.stopPropagation();
+                                setYearDropdownOpen(prev => !prev);
+                                setMonthDropdownOpen(false);
+                                setTimeout(() => {
+                                    const activeEl = document.querySelector('#year-dropdown .dropdown-item.active');
+                                    if (activeEl) {
+                                        activeEl.scrollIntoView({ block: 'center', behavior: 'instant' });
+                                    }
+                                }, 0);
+                            }}>
+                                {currentYear} <span className="arrow">▼</span>
+                            </button>
+                            <div className={`dropdown-menu${yearDropdownOpen ? ' show' : ''}`}>
+                                {years.map(y => (
+                                    <button
+                                        key={y}
+                                        className={`dropdown-item${y === currentYear ? ' active' : ''}`}
+                                        onClick={() => {
+                                            setCurrentYear(y);
+                                            setYearDropdownOpen(false);
+                                        }}
+                                    >
+                                        {y}
+                                    </button>
                                 ))}
                             </div>
                         </div>
                     </div>
-                    <div className="main-progress-wrapper">
-                        <div className="main-progress-bar">
-                            <div className="main-progress-fill" style={{ width: Math.max(pct, 5) + '%' }}>
-                                <span className="main-progress-text">{pct}%</span>
-                            </div>
-                        </div>
+
+                    <div className="dream-controls-right">
+                        <button className="app-btn app-btn-primary btn-add-habit-sm" onClick={() => { setHabitModalValue(''); setHabitModalOpen(true); }}>
+                            + Add Habit
+                        </button>
                     </div>
                 </div>
 
                 <div className="execution-section">
-                    <div className="section-header">
-                        <h2 className="section-title-app">Execution Plan <span style={{ fontWeight: 600, color: 'var(--blue)', fontSize: '0.85em', marginLeft: 8 }}>– {monthNames[currentMonth]} {currentYear}</span></h2>
-                        <button className="app-btn app-btn-primary app-btn-sm" onClick={() => { setHabitModalValue(''); setHabitModalOpen(true); }}>+ Add Habit</button>
-                    </div>
                     <HabitGrid dream={dream} />
                 </div>
-
-
 
                 <div className="motivation-banner"><p>&ldquo;Small habits. Massive transformation.&rdquo;</p></div>
             </>

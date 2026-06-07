@@ -1268,12 +1268,48 @@ import { createClient } from '@supabase/supabase-js';
   function updateMonthPicker() {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'];
-    $('#year-label').textContent = currentYear;
-    $('#current-month-name').textContent = `${monthNames[currentMonth]} ${currentYear}`;
-    $('#exec-month-label').textContent = `– ${monthNames[currentMonth]} ${currentYear}`;
-    $$('.month-btn').forEach(btn => {
-      const m = parseInt(btn.dataset.month);
-      btn.classList.toggle('active', m === currentMonth);
+
+    // Update triggers text
+    $('#month-trigger').innerHTML = `${monthNames[currentMonth]} <span class="arrow">▼</span>`;
+    $('#year-trigger').innerHTML = `${currentYear} <span class="arrow">▼</span>`;
+
+    // Populate month menu items
+    const monthMenu = $('#month-menu');
+    monthMenu.innerHTML = monthNames.map((name, idx) => `
+      <button class="dropdown-item ${idx === currentMonth ? 'active' : ''}" data-month="${idx}">
+        ${name}
+      </button>
+    `).join('');
+
+    // Populate year menu items: 2000 to 2050
+    const yearMenu = $('#year-menu');
+    const years = [];
+    for (let y = 2000; y <= 2050; y++) {
+      years.push(y);
+    }
+    yearMenu.innerHTML = years.map(y => `
+      <button class="dropdown-item ${y === currentYear ? 'active' : ''}" data-year="${y}">
+        ${y}
+      </button>
+    `).join('');
+
+    // Attach click events to the items
+    monthMenu.querySelectorAll('.dropdown-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentMonth = parseInt(btn.dataset.month);
+        monthMenu.classList.remove('show');
+        renderDreamPage();
+      });
+    });
+
+    yearMenu.querySelectorAll('.dropdown-item').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentYear = parseInt(btn.dataset.year);
+        yearMenu.classList.remove('show');
+        renderDreamPage();
+      });
     });
   }
 
@@ -1281,8 +1317,8 @@ import { createClient } from '@supabase/supabase-js';
     const pct = calcDreamProgress(dream, currentYear, currentMonth);
     const fill = $('#dream-progress-fill');
     const text = $('#dream-progress-text');
-    fill.style.width = Math.max(pct, 5) + '%';
-    text.textContent = pct + '%';
+    if (fill) fill.style.width = Math.max(pct, 5) + '%';
+    if (text) text.textContent = pct + '%';
   }
 
   function renderHabitGrid(dream) {
@@ -2338,29 +2374,41 @@ import { createClient } from '@supabase/supabase-js';
     });
 
     // Back button
-    $('#btn-back-landing').addEventListener('click', () => navigate('landing'));
+    $('#btn-back-arrow').addEventListener('click', () => navigate('landing'));
 
     // Dream switcher
     $('#dream-switcher').addEventListener('change', (e) => {
       navigate(`dream/${e.target.value}`);
     });
 
-    // Year navigation
-    $('#btn-prev-year').addEventListener('click', () => {
-      currentYear--;
-      renderDreamPage();
-    });
-    $('#btn-next-year').addEventListener('click', () => {
-      currentYear++;
-      renderDreamPage();
+    // Setup custom dropdown triggers
+    const monthTrigger = $('#month-trigger');
+    const monthMenu = $('#month-menu');
+    const yearTrigger = $('#year-trigger');
+    const yearMenu = $('#year-menu');
+
+    monthTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      monthMenu.classList.toggle('show');
+      yearMenu.classList.remove('show');
     });
 
-    // Month grid
-    $$('.month-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        currentMonth = parseInt(btn.dataset.month);
-        renderDreamPage();
-      });
+    yearTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      yearMenu.classList.toggle('show');
+      monthMenu.classList.remove('show');
+      if (yearMenu.classList.contains('show')) {
+        const active = yearMenu.querySelector('.dropdown-item.active');
+        if (active) {
+          active.scrollIntoView({ block: 'center', behavior: 'instant' });
+        }
+      }
+    });
+
+    // Close on outside click
+    document.addEventListener('click', () => {
+      monthMenu.classList.remove('show');
+      yearMenu.classList.remove('show');
     });
 
     // Map Your Day is initialized dynamically via renderMapPage
