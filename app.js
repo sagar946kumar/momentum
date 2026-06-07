@@ -164,360 +164,578 @@ import { createClient } from '@supabase/supabase-js';
     }
   });
 
-  // ─── Map Your Day ──────────────────────────────────────────
-  const timeSlots = [
-    '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
-    '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00',
-    '20:00', '21:00', '22:00', '23:00'
-  ];
+  // ─── Map Your Day Visual Flow System ──────────────────────────
+  let mydFlowState = {
+    date: new Date().toDateString(),
+    rootTaskIds: [],
+    tasks: {},
+    children: {}
+  };
+  let mydTodoOpen = false;
+  let mydTodoContext = null;
+  let mydSelectedTasks = [];
 
-  function formatTime(slot) {
-    const hour = parseInt(slot.split(':')[0]);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-    return `${displayHour}:00 ${ampm}`;
+  function loadMydState() {
+    const key = `myd_flow_${new Date().toDateString()}`;
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        mydFlowState = JSON.parse(saved);
+        return;
+      }
+    } catch (e) {
+      console.error("Error loading MYD state:", e);
+    }
+    mydFlowState = {
+      date: new Date().toDateString(),
+      rootTaskIds: [],
+      tasks: {},
+      children: {}
+    };
   }
 
-  function getSlotItem(slot) {
-    let found = null;
-    appData.dreams.forEach(d => {
-      d.habits.forEach(h => {
-        if (h.timeSlot === slot) {
-          found = { ...h, dreamId: d.id, dreamTitle: d.title, isSystem: d.isSystem || false };
-        }
+  function saveMydState() {
+    const key = `myd_flow_${new Date().toDateString()}`;
+    try {
+      localStorage.setItem(key, JSON.stringify(mydFlowState));
+    } catch (e) {
+      console.error("Error saving MYD state:", e);
+    }
+  }
+
+  function getMydAvailableTasks() {
+    const allHabits = [];
+    (appData.dreams || []).forEach(d => {
+      (d.habits || []).forEach(h => {
+        allHabits.push({
+          id: `dream_${d.id}_${h.id}`,
+          name: h.name,
+          dreamTitle: d.isSystem ? "Custom Tasks" : d.title,
+          sourceId: h.id,
+          dreamId: d.id
+        });
       });
     });
-    return found;
+
+    const usedNames = new Set(Object.values(mydFlowState.tasks).map(t => t.name));
+    return allHabits.filter(h => !usedNames.has(h.name));
   }
+
+  // Ticker for running sessions
+  setInterval(() => {
+    if (pages.map && pages.map.classList.contains('active')) {
+      const hasRunningTasks = Object.values(mydFlowState.tasks).some(t => t.status === 'running');
+      if (hasRunningTasks) {
+        renderMydCanvas();
+        updateMydStats();
+      }
+    }
+  }, 1000);
 
   function renderMapPage() {
-    const today = new Date().getDate();
-    const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
-    const currentHour = new Date().getHours();
+    loadMydState();
+    
+    const dateStr = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    $('#myd-page-sub-date').textContent = dateStr;
+    $('#myd-canvas-date').textContent = new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
+    
+    renderMydCanvas();
+    updateMydStats();
+    setupMydEventListeners();
+  }
 
-    // 1. Unscheduled habits
-    const unscheduledHabits = [];
-    appData.dreams.forEach(d => {
-      if (d.isSystem) return;
-      d.habits.forEach(h => {
-        if (!h.timeSlot) {
-          unscheduledHabits.push({ ...h, dreamId: d.id, dreamTitle: d.title });
+  function renderMydCanvas() {
+    const $branchesContainer = $('#myd-flow-branches-container');
+    if (!mydFlowState.rootTaskIds || mydFlowState.rootTaskIds.length === 0) {
+      $branchesContainer.innerHTML = `
+        <div class="myd-empty-flow" style="margin: 24px auto;">
+          <div class="myd-empty-flow-icon">🧠</div>
+          <p style="font-weight: 700; margin-bottom: 4px;">Initialize Your Day</p>
+          <p>No tasks added to flow yet. Click the "To-Do List" card above to select tasks and build your map.</p>
+        </div>
+      `;
+      return;
+    }
+
+    let html = `<div class="myd-flow-branches">`;
+    mydFlowState.rootTaskIds.forEach(rootId => {
+      html += renderMydTaskBranchHtml(rootId, 0);
+    });
+    html += `</div>`;
+
+    const tasks = Object.values(mydFlowState.tasks);
+    if (tasks.length > 0 && tasks.every(t => t.status === 'completed')) {
+      html += `
+        <div class="myd-flow-complete-banner">
+          ✨ ALL FLOW TASKS COMPLETED! YOU HAVE COMPLETED YOUR DAY! ✨
+        </div>
+      `;
+    }
+
+    $branchesContainer.innerHTML = html;
+    attachMydCanvasInteractions();
+  }
+
+  function renderMydTaskBranchHtml(taskId, depth = 0) {
+    const task = mydFlowState.tasks[taskId];
+    if (!task) return '';
+    const children = mydFlowState.children[taskId] || [];
+
+    const cardHtml = renderMydTaskCardHtml(task);
+    
+    let childrenHtml = '';
+    if (children.length > 0) {
+      childrenHtml = `<div class="myd-children-row">`;
+      children.forEach(childId => {
+        childrenHtml += renderMydTaskBranchHtml(childId, depth + 1);
+      });
+      childrenHtml += `</div>`;
+    }
+
+    return `
+      <div class="myd-task-branch" data-task-id="${taskId}">
+        ${cardHtml}
+        ${childrenHtml}
+      </div>
+    `;
+  }
+
+  function renderMydTaskCardHtml(task) {
+    const isRunning = task.status === 'running';
+    const isPaused = task.status === 'paused';
+    const isCompleted = task.status === 'completed';
+
+    let totalMs = 0;
+    (task.sessions || []).forEach(s => {
+      if (s.endTime) {
+        totalMs += (new Date(s.endTime) - new Date(s.startTime));
+      } else if (isRunning) {
+        totalMs += (Date.now() - new Date(s.startTime));
+      }
+    });
+    const totalMin = Math.round(totalMs / 60000);
+
+    let sessionsHtml = '';
+    if (task.sessions && task.sessions.length > 0) {
+      sessionsHtml = `<ul class="myd-sessions-list">`;
+      task.sessions.forEach((s, idx) => {
+        const dur = s.endTime 
+          ? Math.round((new Date(s.endTime) - new Date(s.startTime)) / 60000) 
+          : null;
+        
+        const suffix = idx === 0 ? 'st' : idx === 1 ? 'nd' : idx === 2 ? 'rd' : 'th';
+        const sessionLabel = `${idx + 1}${suffix} session`;
+        const startStr = fmtMydTime(s.startTime);
+        const endStr = s.endTime ? fmtMydTime(s.endTime) : '<span class="myd-session-live">live ●</span>';
+        const durHtml = dur !== null ? `<span class="myd-session-dur">${dur} min</span>` : '';
+
+        sessionsHtml += `
+          <li class="myd-session-row">
+            <span class="myd-session-bullet">•</span>
+            <span class="myd-session-label">${sessionLabel}</span>
+            <span class="myd-session-time">${startStr}–${endStr}</span>
+            ${durHtml}
+          </li>
+        `;
+      });
+      sessionsHtml += `</ul>`;
+    }
+
+    let controlsHtml = '';
+    if (!isCompleted) {
+      controlsHtml = `<div class="myd-task-controls">`;
+      if (!isRunning && !isPaused) {
+        controlsHtml += `
+          <button class="myd-btn myd-btn-start myd-task-action-btn" data-action="start" data-task-id="${task.id}" style="width: 100%;">
+            ▶ Start
+          </button>
+        `;
+      } else if (isRunning) {
+        controlsHtml += `
+          <button class="myd-btn myd-btn-pause myd-task-action-btn" data-action="pause" data-task-id="${task.id}" style="flex: 1;">
+            ⏸ Pause
+          </button>
+          <button class="myd-btn myd-btn-complete myd-task-action-btn" data-action="complete" data-task-id="${task.id}" style="flex: 1;">
+            ✓ Complete
+          </button>
+        `;
+      } else if (isPaused) {
+        controlsHtml += `
+          <button class="myd-btn myd-btn-start myd-task-action-btn" data-action="resume" data-task-id="${task.id}" style="flex: 1;">
+            ▶ Resume
+          </button>
+          <button class="myd-btn myd-btn-complete myd-task-action-btn" data-action="complete" data-task-id="${task.id}" style="flex: 1;">
+            ✓ Complete
+          </button>
+        `;
+      }
+      controlsHtml += `</div>`;
+    }
+
+    let statusClass = 'myd-task-active';
+    let statusDotClass = '';
+    if (isRunning) {
+      statusClass = 'myd-task-running';
+      statusDotClass = 'dot-run';
+    } else if (isPaused) {
+      statusClass = 'myd-task-paused';
+      statusDotClass = 'dot-pause';
+    } else if (isCompleted) {
+      statusClass = 'myd-task-completed';
+      statusDotClass = 'dot-done';
+    }
+
+    let runningIndicatorHtml = '';
+    if (isRunning) {
+      runningIndicatorHtml = `
+        <div class="myd-task-running-indicator">
+          <span class="myd-pulse"></span> Recording session…
+        </div>
+      `;
+    } else if (isPaused) {
+      runningIndicatorHtml = `
+        <div class="myd-task-paused-indicator">
+          ⏸ Paused · ${totalMin > 0 ? `${totalMin} min so far` : 'just started'}
+        </div>
+      `;
+    } else if (isCompleted) {
+      runningIndicatorHtml = `
+        <div class="myd-task-total">
+          <span>Total work = ${totalMin} min</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="myd-task-card ${statusClass}">
+        <div class="myd-task-card-header">
+          <div class="myd-task-status-dot ${statusDotClass}"></div>
+          <div class="myd-task-name">${escapeHtml(task.name)}</div>
+          ${task.dreamTitle ? `<span class="myd-task-dream-badge">${escapeHtml(task.dreamTitle)}</span>` : ''}
+        </div>
+        
+        ${sessionsHtml}
+        ${runningIndicatorHtml}
+        ${controlsHtml}
+      </div>
+
+      <div class="myd-arrow-connector">
+        <div class="myd-arrow-line"></div>
+        <svg class="myd-arrow-head" width="12" height="8" viewBox="0 0 12 8">
+          <path d="M6 8L0 0h12z" fill="${isCompleted ? 'var(--green)' : 'var(--blue)'}"></path>
+        </svg>
+      </div>
+
+      <button class="myd-plus-btn ${isCompleted ? 'myd-plus-btn-completed' : ''} myd-canvas-plus-btn" data-parent-id="${task.id}" title="Add next task">
+        +
+      </button>
+    `;
+  }
+
+  function fmtMydTime(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    let hours = date.getHours();
+    let minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    return `${hours}:${minutes} ${ampm}`;
+  }
+
+  function updateMydStats() {
+    const tasks = Object.values(mydFlowState.tasks);
+    const totalCount = tasks.length;
+    const completedCount = tasks.filter(t => t.status === 'completed').length;
+    const inFlowCount = tasks.filter(t => t.status !== 'completed').length;
+
+    let totalMs = 0;
+    tasks.forEach(t => {
+      (t.sessions || []).forEach(s => {
+        if (s.endTime) {
+          totalMs += (new Date(s.endTime) - new Date(s.startTime));
+        } else if (t.status === 'running') {
+          totalMs += (Date.now() - new Date(s.startTime));
         }
       });
     });
 
-    const $unscheduledList = $('#unscheduled-habits-list');
-    if (unscheduledHabits.length === 0) {
-      $unscheduledList.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 12px 0;">All habits are scheduled!</p>`;
+    const totalSeconds = Math.floor(totalMs / 1000);
+    const min = Math.floor(totalSeconds / 60);
+    const sec = totalSeconds % 60;
+
+    $('#myd-stat-total').textContent = totalCount;
+    $('#myd-stat-in-flow').textContent = inFlowCount;
+    $('#myd-stat-done').textContent = completedCount;
+    $('#myd-stat-time').textContent = `${min}m ${sec}s`;
+    
+    const available = getMydAvailableTasks().length;
+    $('#myd-todo-node-text').textContent = `${available + totalCount} tasks · ${available} remaining`;
+  }
+
+  function setupMydEventListeners() {
+    const $todoTrigger = $('#myd-todo-node-trigger');
+    if ($todoTrigger) $todoTrigger.onclick = () => openMydTodoModal(null);
+
+    const $todoClose = $('#myd-todo-modal-close');
+    if ($todoClose) $todoClose.onclick = closeMydTodoModal;
+    const $todoCancel = $('#myd-todo-modal-cancel');
+    if ($todoCancel) $todoCancel.onclick = closeMydTodoModal;
+
+    const $todoDone = $('#myd-todo-modal-done');
+    if ($todoDone) $todoDone.onclick = confirmMydTodoSelection;
+
+    const $btnSummary = $('#myd-btn-summary');
+    if ($btnSummary) $btnSummary.onclick = openMydSummaryModal;
+
+    const $sumClose = $('#myd-summary-modal-close');
+    if ($sumClose) $sumClose.onclick = closeMydSummaryModal;
+    const $sumCloseBtn = $('#myd-summary-modal-close-btn');
+    if ($sumCloseBtn) $sumCloseBtn.onclick = closeMydSummaryModal;
+
+    const $sumReset = $('#myd-summary-modal-reset');
+    if ($sumReset) $sumReset.onclick = resetMydDay;
+  }
+
+  function openMydTodoModal(parentId = null) {
+    mydTodoContext = parentId;
+    mydSelectedTasks = [];
+    mydTodoOpen = true;
+
+    const available = getMydAvailableTasks();
+    const $todoList = $('#myd-todo-modal-list');
+    const $todoSub = $('#myd-todo-modal-sub');
+    const $todoDone = $('#myd-todo-modal-done');
+
+    $todoSub.textContent = `${available.length} tasks available · 0 selected`;
+    $todoDone.disabled = true;
+    $todoDone.textContent = 'Done (0 selected)';
+
+    if (available.length === 0) {
+      $todoList.innerHTML = `<div class="myd-empty-state">🎉 All habits and tasks are in the flow!</div>`;
     } else {
-      $unscheduledList.innerHTML = unscheduledHabits.map(h => `
-        <div class="pool-habit-item" data-dream-id="${h.dreamId}" data-habit-id="${h.id}">
-          <div>
-            <div class="pool-habit-name">${escapeHtml(h.name)}</div>
-            <div class="pool-habit-dream">${escapeHtml(h.dreamTitle)}</div>
+      $todoList.innerHTML = available.map(h => `
+        <div class="myd-todo-item" data-habit-id="${h.id}">
+          <input type="checkbox" class="myd-todo-checkbox" data-habit-id="${h.id}" />
+          <div class="myd-todo-info">
+            <span class="myd-todo-name">${escapeHtml(h.name)}</span>
+            <span class="myd-todo-dream">${escapeHtml(h.dreamTitle)}</span>
           </div>
-          <span style="font-size: 0.75rem; color: var(--blue); font-weight: 600;">+ Map</span>
         </div>
       `).join('');
 
-      // Add click listeners to pool items
-      $unscheduledList.querySelectorAll('.pool-habit-item').forEach(item => {
-        item.addEventListener('click', () => {
-          const dreamId = item.dataset.dreamId;
-          const habitId = item.dataset.habitId;
-          const emptySlot = timeSlots.find(slot => !getSlotItem(slot));
-          if (emptySlot) {
-            scheduleHabit(dreamId, habitId, emptySlot);
-          } else {
-            alert("No empty time slots remaining. Free up a slot first!");
+      $todoList.querySelectorAll('.myd-todo-item').forEach(item => {
+        item.onclick = (e) => {
+          if (e.target.classList.contains('myd-todo-checkbox')) return;
+          const cb = item.querySelector('.myd-todo-checkbox');
+          cb.checked = !cb.checked;
+          toggleMydTaskSelect(item.dataset.habitId, cb.checked);
+        };
+
+        const cb = item.querySelector('.myd-todo-checkbox');
+        cb.onclick = (e) => {
+          e.stopPropagation();
+          toggleMydTaskSelect(item.dataset.habitId, cb.checked);
+        };
+      });
+    }
+
+    $('#myd-todo-modal').style.display = 'flex';
+  }
+
+  function toggleMydTaskSelect(habitId, isChecked) {
+    if (isChecked) {
+      if (!mydSelectedTasks.includes(habitId)) {
+        mydSelectedTasks.push(habitId);
+      }
+    } else {
+      mydSelectedTasks = mydSelectedTasks.filter(id => id !== habitId);
+    }
+
+    const available = getMydAvailableTasks();
+    const $todoSub = $('#myd-todo-modal-sub');
+    const $todoDone = $('#myd-todo-modal-done');
+
+    $todoSub.textContent = `${available.length} tasks available · ${mydSelectedTasks.length} selected`;
+    $todoDone.disabled = mydSelectedTasks.length === 0;
+    $todoDone.textContent = `Done (${mydSelectedTasks.length} selected)`;
+
+    $('#myd-todo-modal-list').querySelectorAll('.myd-todo-item').forEach(item => {
+      const id = item.dataset.habitId;
+      item.classList.toggle('myd-todo-selected', mydSelectedTasks.includes(id));
+    });
+  }
+
+  function closeMydTodoModal() {
+    mydTodoOpen = false;
+    mydTodoContext = null;
+    mydSelectedTasks = [];
+    $('#myd-todo-modal').style.display = 'none';
+  }
+
+  function confirmMydTodoSelection() {
+    if (mydSelectedTasks.length === 0) {
+      closeMydTodoModal();
+      return;
+    }
+
+    const available = getMydAvailableTasks();
+    const newIds = [];
+
+    mydSelectedTasks.forEach(habitId => {
+      const habit = available.find(h => h.id === habitId);
+      if (!habit) return;
+
+      const taskId = `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      mydFlowState.tasks[taskId] = {
+        id: taskId,
+        name: habit.name,
+        dreamTitle: habit.dreamTitle,
+        status: 'active',
+        sessions: [],
+        addedAt: new Date().toISOString()
+      };
+
+      if (mydTodoContext) {
+        if (!mydFlowState.children[mydTodoContext]) {
+          mydFlowState.children[mydTodoContext] = [];
+        }
+        mydFlowState.children[mydTodoContext].push(taskId);
+      } else {
+        newIds.push(taskId);
+      }
+    });
+
+    if (!mydTodoContext) {
+      mydFlowState.rootTaskIds = [...(mydFlowState.rootTaskIds || []), ...newIds];
+    }
+
+    saveMydState();
+    closeMydTodoModal();
+    renderMapPage();
+  }
+
+  function attachMydCanvasInteractions() {
+    $$('.myd-canvas-plus-btn').forEach(btn => {
+      btn.onclick = () => {
+        const parentId = btn.dataset.parentId;
+        openMydTodoModal(parentId);
+      };
+    });
+
+    $$('.myd-task-action-btn').forEach(btn => {
+      btn.onclick = () => {
+        const action = btn.dataset.action;
+        const taskId = btn.dataset.taskId;
+        executeMydSessionAction(taskId, action);
+      };
+    });
+  }
+
+  function executeMydSessionAction(taskId, action) {
+    const task = mydFlowState.tasks[taskId];
+    if (!task) return;
+
+    const now = new Date().toISOString();
+
+    if (action === 'start') {
+      task.status = 'running';
+      task.sessions = [...(task.sessions || []), { startTime: now, endTime: null }];
+    } else if (action === 'pause') {
+      task.status = 'paused';
+      const last = task.sessions[task.sessions.length - 1];
+      if (last && !last.endTime) last.endTime = now;
+    } else if (action === 'resume') {
+      task.status = 'running';
+      task.sessions = [...(task.sessions || []), { startTime: now, endTime: null }];
+    } else if (action === 'complete') {
+      task.status = 'completed';
+      const last = task.sessions[task.sessions.length - 1];
+      if (last && !last.endTime) last.endTime = now;
+    }
+
+    saveMydState();
+    renderMapPage();
+  }
+
+  function openMydSummaryModal() {
+    const tasks = Object.values(mydFlowState.tasks);
+    const totalCount = tasks.length;
+    const completedCount = tasks.filter(t => t.status === 'completed').length;
+
+    let totalMs = 0;
+    tasks.forEach(t => {
+      (t.sessions || []).forEach(s => {
+        if (s.endTime) {
+          totalMs += (new Date(s.endTime) - new Date(s.startTime));
+        } else if (t.status === 'running') {
+          totalMs += (Date.now() - new Date(s.startTime));
+        }
+      });
+    });
+
+    const totalSeconds = Math.floor(totalMs / 1000);
+    const min = Math.floor(totalSeconds / 60);
+    const sec = totalSeconds % 60;
+
+    $('#myd-sum-stat-in-flow').textContent = totalCount - completedCount;
+    $('#myd-sum-stat-done').textContent = completedCount;
+    $('#myd-sum-stat-time').textContent = `${min}m ${sec}s`;
+    $('#myd-sum-stat-total').textContent = totalCount;
+    
+    const dateStr = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    $('#myd-summary-modal-date').textContent = dateStr;
+
+    const $summaryList = $('#myd-summary-modal-list');
+    if (tasks.length === 0) {
+      $summaryList.innerHTML = `<div class="myd-empty-state">No tasks tracked in the flow map yet today.</div>`;
+    } else {
+      $summaryList.innerHTML = tasks.map(t => {
+        let taskMs = 0;
+        (t.sessions || []).forEach(s => {
+          if (s.endTime) {
+            taskMs += (new Date(s.endTime) - new Date(s.startTime));
+          } else if (t.status === 'running') {
+            taskMs += (Date.now() - new Date(s.startTime));
           }
         });
-      });
+        const taskMin = Math.round(taskMs / 60000);
+        const statusText = t.status.toUpperCase();
+        let statusClass = 'active';
+        if (t.status === 'completed') statusClass = 'done';
+        else if (t.status === 'running') statusClass = 'running';
+
+        return `
+          <div class="myd-summary-task-row">
+            <div class="myd-task-status-dot dot-${t.status === 'completed' ? 'done' : t.status === 'running' ? 'run' : 'pause'}"></div>
+            <div class="myd-summary-task-name">${escapeHtml(t.name)}</div>
+            <div class="myd-summary-task-sessions">${t.sessions ? t.sessions.length : 0} sessions</div>
+            <div class="myd-summary-task-time">${taskMin} min</div>
+          </div>
+        `;
+      }).join('');
     }
 
-    // 2. Timeline List
-    const $timelineList = $('#map-timeline-list');
-    $timelineList.innerHTML = timeSlots.map(slot => {
-      const item = getSlotItem(slot);
-      const slotHour = parseInt(slot.split(':')[0]);
-      const isActive = currentHour === slotHour;
-      const isCompleted = item && item.tracking[mk] && item.tracking[mk][today] === true;
-
-      let contentHtml = '';
-      if (mapEditingSlot === slot) {
-        contentHtml = `
-          <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
-            <input type="text" class="input-field inline-task-input" style="margin: 0; padding: 6px 12px; font-size: 0.85rem;" placeholder="Task description..." autoFocus />
-            <button class="btn btn-primary btn-sm btn-save-inline-task" style="padding: 6px 12px;" data-slot="${slot}">Save</button>
-            <button class="btn btn-secondary btn-sm btn-cancel-inline-task" style="padding: 6px 12px;">✕</button>
-          </div>
-        `;
-      } else if (item) {
-        contentHtml = `
-          <div class="timeline-slot-filled">
-            <div class="timeline-slot-details">
-              <span class="timeline-slot-title">${escapeHtml(item.name)}</span>
-              <span class="timeline-slot-subtitle">
-                ${item.isSystem ? "Today's Task" : `Dream: ${escapeHtml(item.dreamTitle)}`}
-              </span>
-            </div>
-            <button class="timeline-slot-clear" data-slot="${slot}" title="Unschedule">✕</button>
-          </div>
-        `;
-      } else {
-        contentHtml = `
-          <div class="timeline-slot-dropdown-wrapper">
-            <button class="timeline-slot-empty-btn" data-slot="${slot}">
-              <span>+</span> Add habit or task
-            </button>
-            ${mapActiveDropdown === slot ? `
-              <div class="timeline-slot-dropdown">
-                <div class="timeline-slot-dropdown-option opt-custom-task" data-slot="${slot}" style="font-weight: 600; color: var(--blue);">
-                  📝 Write Custom Task...
-                </div>
-                ${unscheduledHabits.length > 0 ? `
-                  <div class="timeline-slot-dropdown-option separator">Schedule a Habit:</div>
-                  ${unscheduledHabits.map(h => `
-                    <div class="timeline-slot-dropdown-option opt-schedule-habit" data-dream-id="${h.dreamId}" data-habit-id="${h.id}" data-slot="${slot}">
-                      ${escapeHtml(h.name)} <span style="font-size: 0.7rem; color: var(--text-muted);">(${escapeHtml(h.dreamTitle)})</span>
-                    </div>
-                  `).join('')}
-                ` : ''}
-              </div>
-            ` : ''}
-          </div>
-        `;
-      }
-
-      return `
-        <div class="timeline-row${isActive ? ' active-hour' : ''}${isCompleted ? ' completed-row' : ''}">
-          <div class="timeline-time-node"></div>
-          <div class="timeline-time-label">${formatTime(slot)}</div>
-          <div class="timeline-content-slot" style="display: block;">
-            ${contentHtml}
-          </div>
-          <div class="timeline-checkbox-wrapper">
-            ${item ? `
-              <button class="timeline-checkbox${isCompleted ? ' checked' : ''}" data-dream-id="${item.dreamId}" data-habit-id="${item.id}">
-                ✓
-              </button>
-            ` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    // Attach timeline event listeners
-    $timelineList.querySelectorAll('.timeline-slot-empty-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        mapActiveDropdown = btn.dataset.slot;
-        renderMapPage();
-      });
-    });
-
-    $timelineList.querySelectorAll('.opt-custom-task').forEach(opt => {
-      opt.addEventListener('click', (e) => {
-        e.stopPropagation();
-        mapEditingSlot = opt.dataset.slot;
-        renderMapPage();
-      });
-    });
-
-    $timelineList.querySelectorAll('.opt-schedule-habit').forEach(opt => {
-      opt.addEventListener('click', () => {
-        scheduleHabit(opt.dataset.dreamId, opt.dataset.habitId, opt.dataset.slot);
-      });
-    });
-
-    $timelineList.querySelectorAll('.btn-cancel-inline-task').forEach(btn => {
-      btn.addEventListener('click', () => {
-        mapEditingSlot = null;
-        renderMapPage();
-      });
-    });
-
-    $timelineList.querySelectorAll('.btn-save-inline-task').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const slot = btn.dataset.slot;
-        const input = btn.parentElement.querySelector('.inline-task-input');
-        saveCustomTask(input.value, slot);
-      });
-    });
-
-    $timelineList.querySelectorAll('.inline-task-input').forEach(input => {
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          const slot = mapEditingSlot;
-          saveCustomTask(input.value, slot);
-        }
-      });
-    });
-
-    $timelineList.querySelectorAll('.timeline-slot-clear').forEach(btn => {
-      btn.addEventListener('click', () => {
-        unscheduleSlot(btn.dataset.slot);
-      });
-    });
-
-    $timelineList.querySelectorAll('.timeline-checkbox').forEach(btn => {
-      btn.addEventListener('click', () => {
-        toggleCompletion(btn.dataset.dreamId, btn.dataset.habitId);
-      });
-    });
-
-    // 3. Completion progress calculation
-    let totalScheduled = 0;
-    let completedScheduled = 0;
-    timeSlots.forEach(slot => {
-      const item = getSlotItem(slot);
-      if (item) {
-        totalScheduled++;
-        if (item.tracking[mk] && item.tracking[mk][today] === true) {
-          completedScheduled++;
-        }
-      }
-    });
-
-    const completionPct = totalScheduled > 0 ? Math.round((completedScheduled / totalScheduled) * 100) : 0;
-    $('#map-progress-pct').textContent = `${completionPct}%`;
-    $('#map-ring-fill').setAttribute('stroke-dasharray', `${completionPct}, 100`);
-    $('#map-progress-text').textContent = `${completedScheduled} of ${totalScheduled} slots done`;
-    $('#map-today-date').textContent = `Today: ${new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}`;
+    $('#myd-summary-modal').style.display = 'flex';
   }
 
-  function scheduleHabit(dreamId, habitId, slot) {
-    // Clear slot
-    appData.dreams.forEach(d => {
-      d.habits.forEach(h => {
-        if (h.timeSlot === slot) h.timeSlot = null;
-      });
-    });
-    const dream = appData.dreams.find(d => d.id === dreamId);
-    if (dream) {
-      const habit = dream.habits.find(h => h.id === habitId);
-      if (habit) habit.timeSlot = slot;
-    }
-    saveData(appData);
-    mapActiveDropdown = null;
-    renderMapPage();
+  function closeMydSummaryModal() {
+    $('#myd-summary-modal').style.display = 'none';
   }
 
-  function saveCustomTask(text, slot) {
-    if (!text.trim()) return;
-    appData.dreams.forEach(d => {
-      d.habits.forEach(h => {
-        if (h.timeSlot === slot) h.timeSlot = null;
-      });
-    });
-
-    let systemDream = appData.dreams.find(d => d.isSystem || d.id === 'system-tasks');
-    if (!systemDream) {
-      systemDream = {
-        id: 'system-tasks',
-        title: 'Custom Tasks',
-        isSystem: true,
-        createdAt: new Date().toISOString(),
-        habits: []
+  function resetMydDay() {
+    if (confirm("Are you sure you want to reset today's day map? This will delete all tracked sessions for today.")) {
+      mydFlowState = {
+        date: new Date().toDateString(),
+        rootTaskIds: [],
+        tasks: {},
+        children: {}
       };
-      appData.dreams.push(systemDream);
+      saveMydState();
+      closeMydSummaryModal();
+      renderMapPage();
     }
-
-    const task = {
-      id: generateId(),
-      name: text.trim(),
-      createdAt: new Date().toISOString(),
-      tracking: {},
-      goals: {},
-      timeSlot: slot
-    };
-
-    const today = new Date().getDate();
-    const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
-    task.tracking[mk] = {};
-    for (let d = 1; d < today; d++) {
-      task.tracking[mk][d] = 'na';
-    }
-
-    systemDream.habits.push(task);
-    saveData(appData);
-    mapEditingSlot = null;
-    mapActiveDropdown = null;
-    renderMapPage();
-  }
-
-  function unscheduleSlot(slot) {
-    appData.dreams.forEach(d => {
-      d.habits.forEach(h => {
-        if (h.timeSlot === slot) h.timeSlot = null;
-      });
-    });
-    saveData(appData);
-    renderMapPage();
-  }
-
-  function toggleCompletion(dreamId, habitId) {
-    const today = new Date().getDate();
-    const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
-
-    const dream = appData.dreams.find(d => d.id === dreamId);
-    if (dream) {
-      const habit = dream.habits.find(h => h.id === habitId);
-      if (habit) {
-        if (!habit.tracking[mk]) habit.tracking[mk] = {};
-        const current = habit.tracking[mk][today];
-        if (current === true) {
-          delete habit.tracking[mk][today];
-        } else {
-          habit.tracking[mk][today] = true;
-        }
-      }
-    }
-    saveData(appData);
-    renderMapPage();
-  }
-
-  function autoMap() {
-    const unmapped = [];
-    appData.dreams.forEach(d => {
-      if (d.isSystem) return;
-      d.habits.forEach(h => {
-        if (!h.timeSlot) {
-          unmapped.push(h);
-        }
-      });
-    });
-
-    if (unmapped.length === 0) return;
-
-    const busySlots = new Set();
-    appData.dreams.forEach(d => {
-      d.habits.forEach(h => {
-        if (h.timeSlot) busySlots.add(h.timeSlot);
-      });
-    });
-
-    let unmappedIdx = 0;
-    for (let i = 2; i < timeSlots.length; i++) {
-      const slot = timeSlots[i];
-      if (!busySlots.has(slot) && unmappedIdx < unmapped.length) {
-        unmapped[unmappedIdx].timeSlot = slot;
-        unmappedIdx++;
-      }
-    }
-    saveData(appData);
-    renderMapPage();
-  }
-
-  function clearSchedule() {
-    appData.dreams.forEach(d => {
-      d.habits.forEach(h => {
-        h.timeSlot = null;
-      });
-    });
-    appData.dreams = appData.dreams.filter(d => !d.isSystem);
-    saveData(appData);
-    renderMapPage();
   }
 
   // ─── Realtime Sync ──────────────────────────────────────────
@@ -2008,9 +2226,7 @@ import { createClient } from '@supabase/supabase-js';
       });
     });
 
-    // Map Your Day
-    $('#btn-map-automap').addEventListener('click', autoMap);
-    $('#btn-map-clear').addEventListener('click', clearSchedule);
+    // Map Your Day is initialized dynamically via renderMapPage
   }
 
   function saveDream() {

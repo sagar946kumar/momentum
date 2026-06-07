@@ -243,61 +243,135 @@
 
   <!-- ========== PAGE: MAP YOUR DAY ========== -->
   <section id="page-map" class="page">
-    <div class="dashboard-header">
-      <h1 class="dashboard-title">Map Your Day</h1>
-      <p class="dashboard-sub">Design your daily routine and execute with momentum</p>
+    <!-- Header -->
+    <div class="myd-page-header">
+      <div class="myd-header-left">
+        <h1 class="myd-page-title">Map Your Day</h1>
+        <p class="myd-page-sub" id="myd-page-sub-date">Visual productivity engine</p>
+      </div>
+      <div class="myd-header-right">
+        <div class="myd-header-stats">
+          <div class="myd-header-stat">
+            <span class="myd-hs-val" id="myd-stat-total">0</span>
+            <span class="myd-hs-label">Total Tasks</span>
+          </div>
+          <div class="myd-header-stat">
+            <span class="myd-hs-val" style="color: var(--blue);" id="myd-stat-in-flow">0</span>
+            <span class="myd-hs-label">In Flow</span>
+          </div>
+          <div class="myd-header-stat">
+            <span class="myd-hs-val" style="color: var(--green);" id="myd-stat-done">0</span>
+            <span class="myd-hs-label">Done</span>
+          </div>
+          <div class="myd-header-stat">
+            <span class="myd-hs-val" style="color: var(--blue);" id="myd-stat-time">0m 0s</span>
+            <span class="myd-hs-label">Work Time</span>
+          </div>
+        </div>
+        <button class="myd-btn myd-btn-outline" id="myd-btn-summary">
+          📊 Day Summary
+        </button>
+      </div>
     </div>
 
-    <div class="map-container">
-      <!-- Left Sidebar -->
-      <div class="map-sidebar">
-        <div class="pool-card">
-          <div class="map-progress-section">
-            <div class="map-progress-ring-container">
-              <svg width="60" height="60" viewBox="0 0 36 36">
-                <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#F0F2F5" stroke-width="3.5" />
-                <path id="map-ring-fill" class="ring-fill" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--blue)" stroke-width="3.5" stroke-dasharray="0, 100" stroke-linecap="round" />
-              </svg>
-              <div class="map-progress-ring-text" id="map-progress-pct">0%</div>
-            </div>
-            <div>
-              <div style="font-size: 0.95rem; font-weight: 700;">Today's Progress</div>
-              <div style="font-size: 0.75rem; color: var(--text-secondary);" id="map-progress-text">0 of 0 slots done</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="pool-card">
-          <div class="pool-card-title">Unscheduled Habits</div>
-          <div class="pool-habits-list" id="unscheduled-habits-list">
-            <!-- Populated by JS -->
-          </div>
-        </div>
-
-        <div class="pool-card">
-          <div class="pool-card-title">Quick Actions</div>
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <button class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; display: inline-flex;" id="btn-map-automap">
-              ⚡ Auto-Map Habits
-            </button>
-            <button class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center; display: inline-flex;" id="btn-map-clear">
-              ✕ Clear Day Map
-            </button>
-          </div>
+    <!-- Flow Canvas -->
+    <div class="myd-flow-canvas">
+      <!-- Root Date Node -->
+      <div class="myd-root-node">
+        <div class="myd-date-chip" id="myd-canvas-date">
+          Date
         </div>
       </div>
 
-      <!-- Right Timeline -->
-      <div class="map-timeline-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 16px;">
-          <div style="font-weight: 700; font-size: 1.1rem;">Daily Schedule</div>
-          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;" id="map-today-date">
-            Today
+      <div class="myd-arrow-connector">
+        <div class="myd-arrow-line"></div>
+        <svg class="myd-arrow-head" width="12" height="8" viewBox="0 0 12 8">
+          <path d="M6 8L0 0h12z" fill="var(--blue)"></path>
+        </svg>
+      </div>
+
+      <!-- To-Do List Node -->
+      <div class="myd-todo-node" id="myd-todo-node-trigger">
+        <div class="myd-todo-node-icon">📋</div>
+        <div class="myd-todo-node-content">
+          <span class="myd-todo-node-title">To-Do List</span>
+          <span class="myd-todo-node-count" id="myd-todo-node-text">
+            0 tasks · 0 remaining
+          </span>
+        </div>
+        <div class="myd-todo-node-cta">Select →</div>
+      </div>
+
+      <!-- Tasks Flow Container -->
+      <div id="myd-flow-branches-container">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- To-Do List Modal -->
+    <div class="myd-modal-overlay" id="myd-todo-modal" style="display: none;">
+      <div class="myd-modal">
+        <div class="myd-modal-header">
+          <div>
+            <h3 class="myd-modal-title">📋 To-Do List</h3>
+            <p class="myd-modal-sub" id="myd-todo-modal-sub">
+              0 tasks available · 0 selected
+            </p>
+          </div>
+          <button class="myd-modal-close" id="myd-todo-modal-close">&times;</button>
+        </div>
+        <div class="myd-modal-body">
+          <div class="myd-todo-list" id="myd-todo-modal-list">
+            <!-- Populated by JS -->
           </div>
         </div>
+        <div class="myd-modal-footer">
+          <button class="myd-btn myd-btn-secondary" id="myd-todo-modal-cancel">Cancel</button>
+          <button class="myd-btn myd-btn-primary" id="myd-todo-modal-done" disabled>
+            Done (0 selected)
+          </button>
+        </div>
+      </div>
+    </div>
 
-        <div class="timeline-list" id="map-timeline-list">
-          <!-- Populated by JS -->
+    <!-- Day Summary Modal -->
+    <div class="myd-modal-overlay" id="myd-summary-modal" style="display: none;">
+      <div class="myd-modal myd-modal-wide">
+        <div class="myd-modal-header">
+          <div>
+            <h3 class="myd-modal-title">📊 Day Summary</h3>
+            <p class="myd-modal-sub" id="myd-summary-modal-date">Date</p>
+          </div>
+          <button class="myd-modal-close" id="myd-summary-modal-close">&times;</button>
+        </div>
+        <div class="myd-modal-body">
+          <div class="myd-summary-stats">
+            <div class="myd-summary-stat">
+              <span class="myd-summary-val" id="myd-sum-stat-in-flow">0</span>
+              <span class="myd-summary-label">Tasks in Flow</span>
+            </div>
+            <div class="myd-summary-stat">
+              <span class="myd-summary-val" style="color: var(--green);" id="myd-sum-stat-done">0</span>
+              <span class="myd-summary-label">Completed</span>
+            </div>
+            <div class="myd-summary-stat">
+              <span class="myd-summary-val" style="color: var(--blue);" id="myd-sum-stat-time">0m 0s</span>
+              <span class="myd-summary-label">Total Work Time</span>
+            </div>
+            <div class="myd-summary-stat">
+              <span class="myd-summary-val" id="myd-sum-stat-total">0</span>
+              <span class="myd-summary-label">Total Tasks</span>
+            </div>
+          </div>
+          <div class="myd-summary-task-list" id="myd-summary-modal-list">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+        <div class="myd-modal-footer">
+          <button class="myd-btn myd-btn-secondary" id="myd-summary-modal-reset">
+            🔄 Reset Day
+          </button>
+          <button class="myd-btn myd-btn-primary" id="myd-summary-modal-close-btn">Close</button>
         </div>
       </div>
     </div>
