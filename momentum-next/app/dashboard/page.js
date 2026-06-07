@@ -85,56 +85,37 @@ function ArrowConnector({ label }) {
     );
 }
 
-// Task card with session engine
-function TaskFlowCard({ task, onSessionAction, onPlusClick, isLast }) {
+// Task card with session engine — matches sketch design exactly
+function TaskFlowCard({ task, onSessionAction, onPlusClick }) {
     const totalMs = (task.sessions || []).reduce((sum, s) => {
         if (s.endTime) return sum + (new Date(s.endTime) - new Date(s.startTime));
-        if (s.startTime && task.status === 'running') {
-            return sum + (Date.now() - new Date(s.startTime));
-        }
+        if (s.startTime && task.status === 'running') return sum + (Date.now() - new Date(s.startTime));
         return sum;
     }, 0);
 
-    const isRunning = task.status === 'running';
-    const isPaused = task.status === 'paused';
-    const isCompleted = task.status === 'completed';
-    const isActive = task.status === 'active' || isRunning || isPaused;
+    const totalMin = Math.floor(totalMs / 60000);
 
-    const currentSession = task.sessions && task.sessions[task.sessions.length - 1];
+    const isRunning = task.status === 'running';
+    const isPaused  = task.status === 'paused';
+    const isCompleted = task.status === 'completed';
 
     return (
         <div className="myd-task-branch">
-            {/* Task Node */}
-            <div className={`myd-task-card ${isCompleted ? 'myd-task-completed' : isRunning ? 'myd-task-running' : isPaused ? 'myd-task-paused' : ''}`}>
+
+            {/* ── Task Card ── */}
+            <div className={`myd-task-card ${isRunning ? 'myd-task-running' : isPaused ? 'myd-task-paused' : isCompleted ? 'myd-task-completed' : ''}`}>
+
+                {/* Task name + dream */}
                 <div className="myd-task-card-header">
-                    <div className="myd-task-status-dot" />
-                    <span className="myd-task-name">{task.name}</span>
-                    {task.dreamTitle && (
-                        <span className="myd-task-dream-badge">{task.dreamTitle}</span>
-                    )}
+                    <div className={`myd-task-status-dot ${isRunning ? 'dot-run' : isPaused ? 'dot-pause' : isCompleted ? 'dot-done' : ''}`} />
+                    <div className="myd-task-name">{task.name}</div>
                 </div>
+                {task.dreamTitle && <div className="myd-task-dream-badge">{task.dreamTitle}</div>}
 
-                {/* Sessions List */}
-                {task.sessions && task.sessions.length > 0 && (
-                    <div className="myd-sessions-list">
-                        {task.sessions.map((s, i) => (
-                            <div key={i} className="myd-session-row">
-                                <span className="myd-session-num">Session {i + 1}</span>
-                                <span className="myd-session-time">
-                                    {fmtTime(s.startTime)} → {s.endTime ? fmtTime(s.endTime) : <span className="myd-session-live">● live</span>}
-                                </span>
-                                {s.endTime && (
-                                    <span className="myd-session-dur">{fmtMs(new Date(s.endTime) - new Date(s.startTime))}</span>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Controls */}
+                {/* Control buttons row — matching sketch: [Start Time | Pause | Completed] */}
                 {!isCompleted && (
                     <div className="myd-task-controls">
-                        {!isRunning && !isPaused && task.status === 'active' && (
+                        {task.status === 'active' && (
                             <button className="myd-btn myd-btn-start" onClick={() => onSessionAction(task.id, 'start')}>
                                 ▶ Start
                             </button>
@@ -162,44 +143,62 @@ function TaskFlowCard({ task, onSessionAction, onPlusClick, isLast }) {
                     </div>
                 )}
 
-                {/* Total Time */}
-                {isCompleted && (
-                    <div className="myd-task-total">
-                        <span>✓ Completed</span>
-                        <span className="myd-task-total-time">
-                            {(task.sessions || []).length} session{(task.sessions || []).length !== 1 ? 's' : ''} · Total: {fmtMs(totalMs)}
-                        </span>
-                    </div>
+                {/* Session list — bullet style like sketch */}
+                {task.sessions && task.sessions.length > 0 && (
+                    <ul className="myd-sessions-list">
+                        {task.sessions.map((s, i) => {
+                            const dur = s.endTime
+                                ? Math.round((new Date(s.endTime) - new Date(s.startTime)) / 60000)
+                                : null;
+                            return (
+                                <li key={i} className="myd-session-row">
+                                    <span className="myd-session-bullet">•</span>
+                                    <span className="myd-session-label">{i + 1}{i === 0 ? 'st' : i === 1 ? 'nd' : i === 2 ? 'rd' : 'th'} session</span>
+                                    <span className="myd-session-time">
+                                        {fmtTime(s.startTime)}–{s.endTime ? fmtTime(s.endTime) : <span className="myd-session-live">live ●</span>}
+                                    </span>
+                                    {dur !== null && <span className="myd-session-dur">{dur} min</span>}
+                                </li>
+                            );
+                        })}
+                    </ul>
                 )}
+
+                {/* Running live indicator */}
                 {isRunning && (
                     <div className="myd-task-running-indicator">
-                        <span className="myd-pulse" /> Running…
+                        <span className="myd-pulse" /> Recording session…
                     </div>
                 )}
                 {isPaused && (
                     <div className="myd-task-paused-indicator">
-                        ⏸ Paused · {fmtMs(totalMs)} so far
+                        ⏸ Paused · {totalMin > 0 ? `${totalMin} min so far` : 'just started'}
+                    </div>
+                )}
+
+                {/* Total work — shown on completion, matching sketch "Total work = 30 min" */}
+                {isCompleted && (
+                    <div className="myd-task-total">
+                        <span>✓ Done</span>
+                        <span className="myd-task-total-time">Total work = {totalMin} min</span>
                     </div>
                 )}
             </div>
 
-            {/* Plus button below task */}
-            {!isCompleted && isActive && (
-                <>
-                    <ArrowConnector />
-                    <button className="myd-plus-btn" onClick={() => onPlusClick(task.id)}>
-                        +
-                    </button>
-                </>
-            )}
-            {isCompleted && (
-                <>
-                    <ArrowConnector label={`Total: ${fmtMs(totalMs)}`} />
-                    <button className="myd-plus-btn myd-plus-btn-completed" onClick={() => onPlusClick(task.id)}>
-                        +
-                    </button>
-                </>
-            )}
+            {/* ── Arrow + Plus button below every task ── */}
+            <div className="myd-arrow-connector">
+                <div className="myd-arrow-line" />
+                <svg className="myd-arrow-head" width="12" height="8" viewBox="0 0 12 8">
+                    <path d="M6 8L0 0h12z" fill={isCompleted ? 'var(--green)' : 'var(--blue)'} />
+                </svg>
+            </div>
+            <button
+                className={`myd-plus-btn ${isCompleted ? 'myd-plus-btn-completed' : ''}`}
+                onClick={() => onPlusClick(task.id)}
+                title="Add next task"
+            >
+                +
+            </button>
         </div>
     );
 }

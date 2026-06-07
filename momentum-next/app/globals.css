@@ -3161,3 +3161,93 @@ cite {
   .myd-summary-task-row { grid-template-columns: 20px 1fr 60px; }
   .myd-summary-task-time { display: none; }
 }
+
+/* ── Task Branch Wrapper ─────────────────────────────────
+   Each branch is a column: card → arrow → plus → children */
+.myd-task-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* ── Flow canvas: allow horizontal scrolling for wide maps */
+.myd-flow-canvas {
+  overflow-x: auto;
+  padding-bottom: 48px;
+}
+
+.myd-flow-branches {
+  min-width: max-content;
+  padding: 0 24px;
+}
+
+/* ── Status dot variants ─────────────────────────── */
+.myd-task-status-dot.dot-run {
+  background: var(--blue);
+  box-shadow: 0 0 8px var(--blue);
+  animation: myd-dot-pulse 1s infinite;
+}
+.myd-task-status-dot.dot-pause {
+  background: #f59e0b;
+  box-shadow: 0 0 6px #f59e0b;
+}
+.myd-task-status-dot.dot-done {
+  background: var(--green);
+}
+
+/* ── Session list — bullet style matching sketch ─── */
+.myd-sessions-list {
+  list-style: none;
+  margin: 10px 0 4px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.myd-session-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.myd-session-bullet {
+  color: var(--blue);
+  font-size: 1rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.myd-session-label {
+  font-weight: 700;
+  color: var(--text-secondary);
+  min-width: 68px;
+  flex-shrink: 0;
+}
+
+.myd-session-time {
+  color: var(--text-primary);
+  flex: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.myd-session-live {
+  color: var(--blue);
+  font-weight: 700;
+  animation: myd-blink 1s infinite;
+}
+
+.myd-session-dur {
+  font-weight: 700;
+  color: var(--green-dark);
+  background: var(--green-light);
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
