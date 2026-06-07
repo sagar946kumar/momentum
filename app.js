@@ -1255,8 +1255,6 @@ import { createClient } from '@supabase/supabase-js';
     populateDreamSwitcher();
     updateMonthPicker();
     renderHabitGrid(dream);
-    renderDailySummary(dream);
-    renderMonthlySummary(dream);
     updateDreamProgressBar(dream);
   }
 

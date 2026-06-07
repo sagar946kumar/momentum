@@ -1218,21 +1218,7 @@ export default function DashboardPage() {
                     <HabitGrid dream={dream} />
                 </div>
 
-                <div className="daily-summary-section">
-                    <h3 className="subsection-title">Daily Progress</h3>
-                    <div className="daily-chart-wrapper"><canvas ref={dailyChartRef} /></div>
-                </div>
 
-                <div className="monthly-summary">
-                    <h3 className="subsection-title">Monthly Summary</h3>
-                    <div className="stats-grid">
-                        <div className="stat-card"><div className="stat-value">{totalDays}</div><div className="stat-label">Total Days</div></div>
-                        <div className="stat-card"><div className="stat-value">{streaks.completedDays}</div><div className="stat-label">Completed Days</div></div>
-                        <div className="stat-card"><div className="stat-value">{pct}%</div><div className="stat-label">Completion</div></div>
-                        <div className="stat-card"><div className="stat-value">{streaks.longestStreak}</div><div className="stat-label">Longest Streak</div></div>
-                        <div className="stat-card"><div className="stat-value">{consistency}%</div><div className="stat-label">Consistency</div></div>
-                    </div>
-                </div>
 
                 <div className="motivation-banner"><p>&ldquo;Small habits. Massive transformation.&rdquo;</p></div>
             </>
