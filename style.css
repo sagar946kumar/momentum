@@ -810,11 +810,13 @@ body {
 
 .habit-grid-container {
   width: 100%;
+  overflow-x: auto;
 }
 
 /* Habit Grid Table */
 .habit-grid {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -860,12 +862,12 @@ body {
 .habit-grid th.habit-name-col {
   text-align: left;
   padding-left: 8px;
-  width: 110px;
-  min-width: 110px;
-  max-width: 110px;
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
   position: sticky;
   left: 0;
-  z-index: 3;
+  z-index: 12;
   background: var(--bg);
 }
 
@@ -875,13 +877,13 @@ body {
   font-weight: 600;
   font-size: 0.75rem;
   color: var(--text-primary);
-  width: 110px;
-  min-width: 110px;
-  max-width: 110px;
+  width: 240px;
+  min-width: 240px;
+  max-width: 240px;
   position: sticky;
   left: 0;
   background: var(--bg-card);
-  z-index: 1;
+  z-index: 10;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -920,9 +922,24 @@ body {
 }
 
 /* Goal Column */
-.goal-col {
-  width: 44px !important;
-  min-width: 44px !important;
+.habit-grid th.goal-col {
+  position: sticky;
+  left: 240px;
+  z-index: 12;
+  background: var(--bg);
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
+}
+
+.habit-grid td.goal-col {
+  position: sticky;
+  left: 240px;
+  z-index: 10;
+  background: var(--bg-card);
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
 }
 
 .goal-input {
@@ -954,8 +971,12 @@ body {
 }
 
 /* Day Header */
-.day-header {
+.day-header,
+.habit-grid td:not(.habit-name-cell):not(.goal-col) {
   font-variant-numeric: tabular-nums;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
 }
 
 /* Progress column headers */
@@ -2741,29 +2762,101 @@ body {
   border-radius: var(--radius-full);
 }
 
-.myd-flow-branches {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
+/* Snake Grid Layout */
+.myd-snake-grid {
+  display: grid;
+  grid-gap: 48px 48px;
   justify-content: center;
-  width: 100%;
-  min-width: max-content;
-  padding: 0 24px;
+  align-items: start;
+  max-width: 100%;
+  margin: 24px auto;
+  padding: 24px 0 48px;
+  position: relative;
 }
 
-.myd-branch-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 280px;
-  max-width: 340px;
+.myd-snake-grid.cols-4 { grid-template-columns: repeat(4, 280px); }
+.myd-snake-grid.cols-3 { grid-template-columns: repeat(3, 280px); }
+.myd-snake-grid.cols-2 { grid-template-columns: repeat(2, 280px); }
+.myd-snake-grid.cols-1 { grid-template-columns: repeat(1, 280px); }
+
+.myd-grid-item {
+  position: relative;
+  width: 280px;
+  margin: 0 auto;
 }
 
-.myd-children-row {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  padding-top: 4px;
+/* Winding Connecting Arrows */
+.myd-connector-arrow {
+  --arrow-color: #cbd5e1;
+  z-index: 2;
+}
+
+.myd-connector-arrow.status-completed {
+  --arrow-color: var(--green);
+}
+
+.myd-connector-arrow.status-active {
+  --arrow-color: var(--blue);
+}
+
+.myd-connector-arrow.dir-right {
+  position: absolute;
+  top: 50%;
+  right: -48px;
+  width: 48px;
+  height: 2px;
+  background: var(--arrow-color);
+  transform: translateY(-50%);
+}
+
+.myd-connector-arrow.dir-right::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: -4px;
+  border-left: 6px solid var(--arrow-color);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+.myd-connector-arrow.dir-left {
+  position: absolute;
+  top: 50%;
+  left: -48px;
+  width: 48px;
+  height: 2px;
+  background: var(--arrow-color);
+  transform: translateY(-50%);
+}
+
+.myd-connector-arrow.dir-left::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -4px;
+  border-right: 6px solid var(--arrow-color);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+.myd-connector-arrow.dir-down {
+  position: absolute;
+  bottom: -48px;
+  left: 50%;
+  width: 2px;
+  height: 48px;
+  background: var(--arrow-color);
+  transform: translateX(-50%);
+}
+
+.myd-connector-arrow.dir-down::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -4px;
+  border-top: 6px solid var(--arrow-color);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
 }
 
 .myd-task-card {
@@ -2771,7 +2864,7 @@ body {
   background: white;
   border: 1.5px solid var(--border-light);
   border-radius: var(--radius-lg);
-  padding: 16px 18px;
+  padding: 10px 14px;
   box-shadow: var(--shadow-sm);
   transition: all 0.25s var(--ease);
 }
@@ -2801,7 +2894,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .myd-task-status-dot {
@@ -2832,7 +2925,7 @@ body {
 
 .myd-task-name {
   font-family: var(--font-heading);
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 700;
   flex: 1;
 }
@@ -2847,15 +2940,33 @@ body {
   white-space: nowrap;
 }
 
+.myd-task-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 8px;
+  line-height: 1;
+  transition: color 0.2s;
+  opacity: 0.6;
+}
+
+.myd-task-remove-btn:hover {
+  color: var(--red) !important;
+  opacity: 1;
+}
+
 .myd-sessions-list {
   list-style: none;
-  margin: 10px 0 4px;
-  padding: 10px 14px;
+  margin: 4px 0;
+  padding: 6px 10px;
   background: var(--bg);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 
 .myd-session-row {

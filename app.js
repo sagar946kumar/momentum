@@ -168,12 +168,12 @@ import { createClient } from '@supabase/supabase-js';
   let mydFlowState = {
     date: new Date().toDateString(),
     rootTaskIds: [],
-    tasks: {},
-    children: {}
+    tasks: {}
   };
   let mydTodoOpen = false;
   let mydTodoContext = null;
   let mydSelectedTasks = [];
+  let resizeBound = false;
 
   function loadMydState() {
     const key = `myd_flow_${new Date().toDateString()}`;
@@ -181,6 +181,21 @@ import { createClient } from '@supabase/supabase-js';
       const saved = localStorage.getItem(key);
       if (saved) {
         mydFlowState = JSON.parse(saved);
+        
+        // Migrate legacy tree data to linear layout
+        if (mydFlowState.children && Object.keys(mydFlowState.children).length > 0) {
+          const list = [];
+          function traverse(id) {
+            if (!id) return;
+            if (mydFlowState.tasks[id]) list.push(id);
+            const childs = mydFlowState.children[id] || [];
+            childs.forEach(traverse);
+          }
+          (mydFlowState.rootTaskIds || []).forEach(traverse);
+          mydFlowState.rootTaskIds = list;
+          delete mydFlowState.children;
+          saveMydState();
+        }
         return;
       }
     } catch (e) {
@@ -189,8 +204,7 @@ import { createClient } from '@supabase/supabase-js';
     mydFlowState = {
       date: new Date().toDateString(),
       rootTaskIds: [],
-      tasks: {},
-      children: {}
+      tasks: {}
     };
   }
 
@@ -232,6 +246,14 @@ import { createClient } from '@supabase/supabase-js';
     }
   }, 1000);
 
+  function getMydColumnCount() {
+    const w = window.innerWidth;
+    if (w < 640) return 1;
+    if (w < 960) return 2;
+    if (w < 1280) return 3;
+    return 4;
+  }
+
   function renderMapPage() {
     loadMydState();
     
@@ -242,62 +264,101 @@ import { createClient } from '@supabase/supabase-js';
     renderMydCanvas();
     updateMydStats();
     setupMydEventListeners();
+
+    if (!resizeBound) {
+      window.addEventListener('resize', () => {
+        if (pages.map && pages.map.classList.contains('active')) {
+          renderMydCanvas();
+        }
+      });
+      resizeBound = true;
+    }
   }
 
   function renderMydCanvas() {
     const $branchesContainer = $('#myd-flow-branches-container');
-    if (!mydFlowState.rootTaskIds || mydFlowState.rootTaskIds.length === 0) {
-      $branchesContainer.innerHTML = `
-        <div class="myd-empty-flow" style="margin: 24px auto;">
-          <div class="myd-empty-flow-icon">🧠</div>
-          <p style="font-weight: 700; margin-bottom: 4px;">Initialize Your Day</p>
-          <p>No tasks added to flow yet. Click the "To-Do List" card above to select tasks and build your map.</p>
-        </div>
-      `;
-      return;
+    if (!mydFlowState.rootTaskIds) {
+      mydFlowState.rootTaskIds = [];
     }
 
-    let html = `<div class="myd-flow-branches">`;
-    mydFlowState.rootTaskIds.forEach(rootId => {
-      html += renderMydTaskBranchHtml(rootId, 0);
+    const N = getMydColumnCount();
+    const gridItems = [
+      { type: 'todo' },
+      ...mydFlowState.rootTaskIds
+        .map(id => mydFlowState.tasks[id])
+        .filter(Boolean)
+        .map(t => ({ type: 'task', task: t }))
+    ];
+
+    let html = `<div class="myd-snake-grid cols-${N}">`;
+    gridItems.forEach((item, i) => {
+      const row = Math.floor(i / N);
+      let col = i % N;
+      if (row % 2 === 1) {
+        col = N - 1 - col;
+      }
+
+      let arrowHtml = '';
+      if (i < gridItems.length - 1) {
+        const nextRow = Math.floor((i + 1) / N);
+        let nextCol = (i + 1) % N;
+        if (nextRow % 2 === 1) {
+          nextCol = N - 1 - nextCol;
+        }
+
+        let dir = 'down';
+        if (nextRow === row) {
+          dir = nextCol > col ? 'right' : 'left';
+        }
+
+        let status = 'inactive';
+        if (item.type === 'todo') {
+          status = 'active';
+        } else if (item.type === 'task') {
+          if (item.task.status === 'completed') status = 'completed';
+          else if (item.task.status === 'running' || item.task.status === 'paused') status = 'active';
+        }
+
+        arrowHtml = `
+          <div class="myd-connector-arrow dir-${dir} status-${status}"></div>
+        `;
+      }
+
+      let itemHtml = '';
+      if (item.type === 'todo') {
+        const available = getMydAvailableTasks().length;
+        itemHtml = `
+          <div class="myd-grid-item" style="grid-row: ${row + 1}; grid-column: ${col + 1};">
+            <div class="myd-todo-node" id="myd-todo-node-trigger">
+              <div class="myd-todo-node-icon">📋</div>
+              <div class="myd-todo-node-content">
+                <span class="myd-todo-node-title">To-Do List</span>
+                <span class="myd-todo-node-count" id="myd-todo-node-text">
+                  ${available + gridItems.length - 1} tasks · ${available} remaining
+                </span>
+              </div>
+              <div class="myd-todo-node-cta">Select →</div>
+            </div>
+            ${arrowHtml}
+          </div>
+        `;
+      } else {
+        const task = item.task;
+        const cardHtml = renderMydTaskCardHtml(task);
+        itemHtml = `
+          <div class="myd-grid-item" style="grid-row: ${row + 1}; grid-column: ${col + 1};">
+            ${cardHtml}
+            ${arrowHtml}
+          </div>
+        `;
+      }
+
+      html += itemHtml;
     });
     html += `</div>`;
 
-    const tasks = Object.values(mydFlowState.tasks);
-    if (tasks.length > 0 && tasks.every(t => t.status === 'completed')) {
-      html += `
-        <div class="myd-flow-complete-banner">
-          ✨ ALL FLOW TASKS COMPLETED! YOU HAVE COMPLETED YOUR DAY! ✨
-        </div>
-      `;
-    }
-
     $branchesContainer.innerHTML = html;
     attachMydCanvasInteractions();
-  }
-
-  function renderMydTaskBranchHtml(taskId, depth = 0) {
-    const task = mydFlowState.tasks[taskId];
-    if (!task) return '';
-    const children = mydFlowState.children[taskId] || [];
-
-    const cardHtml = renderMydTaskCardHtml(task);
-    
-    let childrenHtml = '';
-    if (children.length > 0) {
-      childrenHtml = `<div class="myd-children-row">`;
-      children.forEach(childId => {
-        childrenHtml += renderMydTaskBranchHtml(childId, depth + 1);
-      });
-      childrenHtml += `</div>`;
-    }
-
-    return `
-      <div class="myd-task-branch" data-task-id="${taskId}">
-        ${cardHtml}
-        ${childrenHtml}
-      </div>
-    `;
   }
 
   function renderMydTaskCardHtml(task) {
@@ -407,28 +468,22 @@ import { createClient } from '@supabase/supabase-js';
     }
 
     return `
-      <div class="myd-task-card ${statusClass}">
-        <div class="myd-task-card-header">
+      <div class="myd-task-card ${statusClass}" style="position: relative;">
+        <div class="myd-task-card-header" style="position: relative;">
           <div class="myd-task-status-dot ${statusDotClass}"></div>
           <div class="myd-task-name">${escapeHtml(task.name)}</div>
+          <button class="myd-task-remove-btn myd-task-action-btn" data-action="remove" data-task-id="${task.id}" title="Remove task from day map">✕</button>
           ${task.dreamTitle ? `<span class="myd-task-dream-badge">${escapeHtml(task.dreamTitle)}</span>` : ''}
         </div>
         
         ${sessionsHtml}
         ${runningIndicatorHtml}
         ${controlsHtml}
-      </div>
 
-      <div class="myd-arrow-connector">
-        <div class="myd-arrow-line"></div>
-        <svg class="myd-arrow-head" width="12" height="8" viewBox="0 0 12 8">
-          <path d="M6 8L0 0h12z" fill="${isCompleted ? 'var(--green)' : 'var(--blue)'}"></path>
-        </svg>
+        <button class="myd-plus-btn ${isCompleted ? 'myd-plus-btn-completed' : ''} myd-canvas-plus-btn" data-parent-id="${task.id}" title="Add next task" style="position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); z-index: 10;">
+          +
+        </button>
       </div>
-
-      <button class="myd-plus-btn ${isCompleted ? 'myd-plus-btn-completed' : ''} myd-canvas-plus-btn" data-parent-id="${task.id}" title="Add next task">
-        +
-      </button>
     `;
   }
 
@@ -471,13 +526,13 @@ import { createClient } from '@supabase/supabase-js';
     $('#myd-stat-time').textContent = `${min}m ${sec}s`;
     
     const available = getMydAvailableTasks().length;
-    $('#myd-todo-node-text').textContent = `${available + totalCount} tasks · ${available} remaining`;
+    const $todoNodeText = $('#myd-todo-node-text');
+    if ($todoNodeText) {
+      $todoNodeText.textContent = `${available + totalCount} tasks · ${available} remaining`;
+    }
   }
 
   function setupMydEventListeners() {
-    const $todoTrigger = $('#myd-todo-node-trigger');
-    if ($todoTrigger) $todoTrigger.onclick = () => openMydTodoModal(null);
-
     const $todoClose = $('#myd-todo-modal-close');
     if ($todoClose) $todoClose.onclick = closeMydTodoModal;
     const $todoCancel = $('#myd-todo-modal-cancel');
@@ -592,23 +647,28 @@ import { createClient } from '@supabase/supabase-js';
         id: taskId,
         name: habit.name,
         dreamTitle: habit.dreamTitle,
+        dreamId: habit.dreamId,
+        habitId: habit.sourceId,
         status: 'active',
         sessions: [],
         addedAt: new Date().toISOString()
       };
-
-      if (mydTodoContext) {
-        if (!mydFlowState.children[mydTodoContext]) {
-          mydFlowState.children[mydTodoContext] = [];
-        }
-        mydFlowState.children[mydTodoContext].push(taskId);
-      } else {
-        newIds.push(taskId);
-      }
+      newIds.push(taskId);
     });
 
-    if (!mydTodoContext) {
-      mydFlowState.rootTaskIds = [...(mydFlowState.rootTaskIds || []), ...newIds];
+    if (!mydFlowState.rootTaskIds) {
+      mydFlowState.rootTaskIds = [];
+    }
+
+    if (mydTodoContext) {
+      const idx = mydFlowState.rootTaskIds.indexOf(mydTodoContext);
+      if (idx !== -1) {
+        mydFlowState.rootTaskIds.splice(idx + 1, 0, ...newIds);
+      } else {
+        mydFlowState.rootTaskIds.push(...newIds);
+      }
+    } else {
+      mydFlowState.rootTaskIds.push(...newIds);
     }
 
     saveMydState();
@@ -617,15 +677,22 @@ import { createClient } from '@supabase/supabase-js';
   }
 
   function attachMydCanvasInteractions() {
+    const $todoTrigger = $('#myd-todo-node-trigger');
+    if ($todoTrigger) {
+      $todoTrigger.onclick = () => openMydTodoModal(null);
+    }
+
     $$('.myd-canvas-plus-btn').forEach(btn => {
-      btn.onclick = () => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
         const parentId = btn.dataset.parentId;
         openMydTodoModal(parentId);
       };
     });
 
     $$('.myd-task-action-btn').forEach(btn => {
-      btn.onclick = () => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
         const action = btn.dataset.action;
         const taskId = btn.dataset.taskId;
         executeMydSessionAction(taskId, action);
@@ -638,6 +705,7 @@ import { createClient } from '@supabase/supabase-js';
     if (!task) return;
 
     const now = new Date().toISOString();
+    const wasCompleted = task.status === 'completed';
 
     if (action === 'start') {
       task.status = 'running';
@@ -653,6 +721,51 @@ import { createClient } from '@supabase/supabase-js';
       task.status = 'completed';
       const last = task.sessions[task.sessions.length - 1];
       if (last && !last.endTime) last.endTime = now;
+
+      // Sync completion status to the habit calendar
+      if (task.dreamId && task.habitId) {
+        const today = new Date().getDate();
+        const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
+        const dream = appData.dreams.find(d => d.id === task.dreamId);
+        if (dream) {
+          const habit = dream.habits.find(h => h.id === task.habitId);
+          if (habit) {
+            if (!habit.tracking[mk]) habit.tracking[mk] = {};
+            habit.tracking[mk][today] = true;
+            saveData(appData);
+          }
+        }
+      }
+    } else if (action === 'remove') {
+      mydFlowState.rootTaskIds = mydFlowState.rootTaskIds.filter(id => id !== taskId);
+      if (task.status === 'completed' && task.dreamId && task.habitId) {
+        const today = new Date().getDate();
+        const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
+        const dream = appData.dreams.find(d => d.id === task.dreamId);
+        if (dream) {
+          const habit = dream.habits.find(h => h.id === task.habitId);
+          if (habit && habit.tracking[mk]) {
+            delete habit.tracking[mk][today];
+            saveData(appData);
+          }
+        }
+      }
+      delete mydFlowState.tasks[taskId];
+    }
+
+    if (wasCompleted && action !== 'complete' && action !== 'remove') {
+      if (task.dreamId && task.habitId) {
+        const today = new Date().getDate();
+        const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
+        const dream = appData.dreams.find(d => d.id === task.dreamId);
+        if (dream) {
+          const habit = dream.habits.find(h => h.id === task.habitId);
+          if (habit && habit.tracking[mk]) {
+            delete habit.tracking[mk][today];
+            saveData(appData);
+          }
+        }
+      }
     }
 
     saveMydState();
@@ -819,18 +932,14 @@ import { createClient } from '@supabase/supabase-js';
     const mk = monthKey(now.getFullYear(), now.getMonth());
     const today = now.getDate();
 
-    // Auto-fill NA for all prior days of THIS month only
     const tracking = {};
     tracking[mk] = {};
-    for (let d = 1; d < today; d++) {
-      tracking[mk][d] = 'na';
-    }
 
     const habit = {
       id: generateId(),
       name: name.trim(),
       createdAt: now.toISOString(),
-      tracking: tracking, // Pre-filled with NA for past days
+      tracking: tracking,
       goals: {},
     };
     dream.habits.push(habit);
@@ -853,14 +962,13 @@ import { createClient } from '@supabase/supabase-js';
     if (!habit) return;
     if (!habit.tracking[monthKey]) habit.tracking[monthKey] = {};
     const current = habit.tracking[monthKey][day];
-    if (!current) {
-      habit.tracking[monthKey][day] = true;       // empty → ✓
-    } else if (current === true) {
-      habit.tracking[monthKey][day] = 'na';       // ✓ → NA
+    if (current === true) {
+      delete habit.tracking[monthKey][day];
     } else {
-      delete habit.tracking[monthKey][day];        // NA → empty
+      habit.tracking[monthKey][day] = true;
     }
     saveData(appData);
+    syncHabitChangeToMyd(dreamId, habitId, monthKey, day, habit.tracking[monthKey][day] === true);
   }
 
   // Simple toggle for habits where goal = totalDays (no NA needed)
@@ -873,6 +981,66 @@ import { createClient } from '@supabase/supabase-js';
     habit.tracking[monthKey][day] = !habit.tracking[monthKey][day];
     if (!habit.tracking[monthKey][day]) delete habit.tracking[monthKey][day];
     saveData(appData);
+    syncHabitChangeToMyd(dreamId, habitId, monthKey, day, habit.tracking[monthKey][day] === true);
+  }
+
+  function syncHabitChangeToMyd(dreamId, habitId, monthKeyVal, day, isCompleted) {
+    const todayDate = new Date();
+    const todayDay = todayDate.getDate();
+    const todayMk = monthKey(todayDate.getFullYear(), todayDate.getMonth());
+    
+    if (day === todayDay && monthKeyVal === todayMk) {
+      let found = false;
+      Object.values(mydFlowState.tasks).forEach(task => {
+        if (task.habitId === habitId || (task.name === getDream(dreamId)?.habits.find(h => h.id === habitId)?.name && task.dreamTitle === getDream(dreamId)?.title)) {
+          found = true;
+          const wasCompleted = task.status === 'completed';
+          if (isCompleted) {
+            task.status = 'completed';
+            if (!task.sessions || task.sessions.length === 0) {
+              task.sessions = [{ startTime: new Date().toISOString(), endTime: new Date().toISOString() }];
+            } else {
+              const last = task.sessions[task.sessions.length - 1];
+              if (last && !last.endTime) last.endTime = new Date().toISOString();
+            }
+          } else {
+            task.status = 'active';
+            if (wasCompleted) {
+              const last = task.sessions[task.sessions.length - 1];
+              if (last && last.endTime) last.endTime = null;
+            }
+          }
+        }
+      });
+
+      if (!found && isCompleted) {
+        const dream = getDream(dreamId);
+        if (dream) {
+          const habit = dream.habits.find(h => h.id === habitId);
+          if (habit) {
+            const taskId = `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+            mydFlowState.tasks[taskId] = {
+              id: taskId,
+              name: habit.name,
+              dreamTitle: dream.isSystem ? "Custom Tasks" : dream.title,
+              dreamId: dreamId,
+              habitId: habitId,
+              status: 'completed',
+              sessions: [{ startTime: new Date().toISOString(), endTime: new Date().toISOString() }],
+              addedAt: new Date().toISOString()
+            };
+            if (!mydFlowState.rootTaskIds) mydFlowState.rootTaskIds = [];
+            mydFlowState.rootTaskIds.push(taskId);
+          }
+        }
+      }
+
+      saveMydState();
+      if (pages.map && pages.map.classList.contains('active')) {
+        renderMydCanvas();
+        updateMydStats();
+      }
+    }
   }
 
   // ─── Goal Helpers ──────────────────────────────────────────
@@ -949,8 +1117,7 @@ import { createClient } from '@supabase/supabase-js';
         } else {
           const tracking = h.tracking[mk] || {};
           const val = tracking[d];
-          // true (✓) or 'na' both count as "done" for daily %
-          if (val === true || val === 'na') done++;
+          if (val === true) done++;
         }
       });
       result.push({
@@ -988,9 +1155,6 @@ import { createClient } from '@supabase/supabase-js';
         if (val === true) {
           current++;
           if (current > best) best = current;
-        } else if (val === 'na') {
-          // NA doesn't break streak, but doesn't extend it
-          continue;
         } else {
           current = 0;
         }
@@ -1009,9 +1173,8 @@ import { createClient } from '@supabase/supabase-js';
     const mk = monthKey(year, month);
     const totalDays = daysInMonth(year, month);
     const tracking = habit.tracking[mk] || {};
-    // Only count days marked true (✓), not 'na'
     const done = Object.values(tracking).filter(v => v === true).length;
-    const naCount = Object.values(tracking).filter(v => v === 'na').length;
+    const naCount = 0;
     const goal = getHabitGoal(habit, mk, totalDays);
     if (goal === 0) return { done: 0, goal: 0, total: totalDays, naCount, pct: 100 };
     return { done, goal, total: totalDays, naCount, pct: Math.round((done / goal) * 100) };
@@ -1150,8 +1313,6 @@ import { createClient } from '@supabase/supabase-js';
       const todayClass = (isThisMonth && d === todayNum) ? 'is-today' : '';
       html += `<th class="day-header ${todayClass}">${d}</th>`;
     }
-    html += '<th class="progress-col">Done</th>';
-    html += '<th class="progress-end-col">Progress</th>';
     html += '</tr></thead><tbody>';
 
     dream.habits.forEach(habit => {
@@ -1174,30 +1335,14 @@ import { createClient } from '@supabase/supabase-js';
           // Goal is 0 → show NA
           html += `<td><span class="day-na">NA</span></td>`;
         } else {
-          // EVERY habit now uses Tri-state: ✓ / NA / empty
           const val = tracking[d];
           let stateClass = 'state-empty';
           let label = '';
           if (val === true) { stateClass = 'state-done'; label = '&#10003;'; }
-          else if (val === 'na') { stateClass = 'state-na'; label = 'NA'; }
           html += `<td><button class="day-tri ${stateClass}" data-habit="${habit.id}" data-day="${d}">${label}</button></td>`;
         }
       }
 
-      if (progress.goal === 0) {
-        html += `<td class="progress-col">0</td>`;
-        html += `<td class="progress-end-col">
-          <span class="habit-progress-text" style="color:var(--text-muted);"><b>N/A</b></span>
-        </td>`;
-      } else {
-        html += `<td class="progress-col">${progress.done}</td>`;
-        html += `<td class="progress-end-col">
-          <div class="habit-progress-visual">
-            <div class="habit-progress-bar-bg"><div class="habit-progress-bar-fg" style="width:${pctClamped}%;background:${barColor}"></div></div>
-            <span class="habit-progress-text">${progress.done}/${progress.goal} <b>${progress.pct}%</b></span>
-          </div>
-        </td>`;
-      }
       html += '</tr>';
     });
 
@@ -1212,13 +1357,7 @@ import { createClient } from '@supabase/supabase-js';
       html += `<td><span class="daily-pct ${cls}">${d.pct}%</span></td>`;
     });
 
-    // Summary totals
-    const totalDone = dailyData.reduce((s, d) => s + d.done, 0);
-    let totalGoals = 0;
-    dream.habits.forEach(h => { totalGoals += getHabitGoal(h, mk, days); });
-    const totalPct = totalGoals > 0 ? Math.round((totalDone / totalGoals) * 100) : 0;
-    html += `<td class="progress-col">${totalDone}</td>`;
-    html += `<td class="progress-end-col"><span class="habit-progress-text"><b>${totalDone}/${totalGoals} · ${totalPct}%</b></span></td>`;
+
 
     html += '</tr></tbody></table>';
     container.innerHTML = html;
@@ -1376,7 +1515,7 @@ import { createClient } from '@supabase/supabase-js';
         let currentS = 0, bestS = 0;
         for (let d = 1; d <= days; d++) {
           if (tracking[d] === true) { currentS++; if (currentS > bestS) bestS = currentS; }
-          else if (tracking[d] !== 'na') { currentS = 0; }
+          else { currentS = 0; }
         }
 
         habitStats.push({
@@ -1416,7 +1555,7 @@ import { createClient } from '@supabase/supabase-js';
         todayTotal++;
         const tracking = h.tracking[mk] || {};
         const val = tracking[today];
-        if (val === true || val === 'na') todayDone++;
+        if (val === true) todayDone++;
       });
     });
     const todayPct = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;
@@ -1525,7 +1664,7 @@ import { createClient } from '@supabase/supabase-js';
           dayTotal++;
           const tracking = h.tracking[mk] || {};
           const val = tracking[d];
-          if (val === true || val === 'na') dayDone++;
+          if (val === true) dayDone++;
         });
       });
       if (dayTotal > 0 && (dayDone / dayTotal) >= 0.5) consistentDays++;
@@ -1768,7 +1907,7 @@ import { createClient } from '@supabase/supabase-js';
           dayTotal++;
           const tracking = h.tracking[mk] || {};
           const val = tracking[d];
-          if (val === true || val === 'na') dayDone++;
+          if (val === true) dayDone++;
         });
       });
       const pct = dayTotal > 0 ? Math.round((dayDone / dayTotal) * 100) : 0;

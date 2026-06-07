@@ -1237,12 +1237,15 @@ cite {
 
 .habit-grid-container {
   width: 100%;
+  overflow-x: auto;
 }
 
 .habit-grid {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 0.78rem;
+  table-layout: fixed;
 }
 
 .habit-grid th {
@@ -1267,33 +1270,66 @@ cite {
   background: rgba(74, 124, 255, 0.02);
 }
 
-.habit-name-col {
-  text-align: left !important;
-  min-width: 140px;
-  padding-left: 16px !important;
+.habit-grid tr:hover td.habit-name-cell {
+  background: linear-gradient(0deg, rgba(74, 124, 255, 0.02), rgba(74, 124, 255, 0.02)), var(--bg-card) !important;
 }
 
-.goal-col {
-  min-width: 60px;
+.habit-grid tr:hover td.goal-col {
+  background: linear-gradient(0deg, rgba(74, 124, 255, 0.02), rgba(74, 124, 255, 0.02)), var(--bg-card) !important;
 }
 
-.progress-col {
-  min-width: 48px;
-}
-
-.progress-end-col {
-  min-width: 160px;
-}
-
-.day-header {
-  min-width: 28px;
-  font-size: 0.68rem;
-}
-
-.habit-name-cell {
+.habit-grid th.habit-name-col {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  background: var(--bg);
+  width: 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
   text-align: left !important;
   padding-left: 16px !important;
-  background: transparent;
+}
+
+.habit-grid td.habit-name-cell {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: var(--bg-card);
+  width: 240px !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+  text-align: left !important;
+  padding-left: 16px !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.habit-grid th.goal-col {
+  position: sticky;
+  left: 240px;
+  z-index: 11;
+  background: var(--bg);
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
+}
+
+.habit-grid td.goal-col {
+  position: sticky;
+  left: 240px;
+  z-index: 10;
+  background: var(--bg-card);
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
+}
+
+.day-header,
+.habit-grid td:not(.habit-name-cell):not(.goal-col) {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
 }
 
 .habit-name-inner {
@@ -2579,15 +2615,16 @@ cite {
 .myd-todo-node {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 24px;
+  gap: 12px;
+  padding: 12px 20px;
   background: white;
   border: 2px solid var(--blue);
   border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all 0.25s var(--ease);
   box-shadow: 0 4px 20px rgba(74, 124, 255, 0.12);
-  min-width: 340px;
+  width: 340px;
+  max-width: 100%;
 }
 
 .myd-todo-node:hover {
@@ -2597,7 +2634,7 @@ cite {
 }
 
 .myd-todo-node-icon {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
 }
 
 .myd-todo-node-content {
@@ -2609,21 +2646,21 @@ cite {
 
 .myd-todo-node-title {
   font-family: var(--font-heading);
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 700;
 }
 
 .myd-todo-node-count {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
 .myd-todo-node-cta {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--blue);
   background: var(--blue-light);
-  padding: 6px 14px;
+  padding: 4px 10px;
   border-radius: var(--radius-full);
 }
 
@@ -2640,8 +2677,8 @@ cite {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 280px;
-  max-width: 340px;
+  width: 340px;
+  max-width: 100%;
 }
 
 .myd-children-row {
@@ -2657,7 +2694,7 @@ cite {
   background: white;
   border: 1.5px solid var(--border-light);
   border-radius: var(--radius-lg);
-  padding: 16px 18px;
+  padding: 10px 14px;
   box-shadow: var(--shadow-sm);
   transition: all 0.25s var(--ease);
 }
@@ -2687,7 +2724,7 @@ cite {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .myd-task-status-dot {
@@ -2714,9 +2751,27 @@ cite {
 
 .myd-task-name {
   font-family: var(--font-heading);
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 700;
   flex: 1;
+}
+
+.myd-task-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 8px;
+  line-height: 1;
+  transition: color 0.2s;
+  opacity: 0.6;
+}
+
+.myd-task-remove-btn:hover {
+  color: var(--red) !important;
+  opacity: 1;
 }
 
 .myd-task-dream-badge {
@@ -2730,11 +2785,11 @@ cite {
 }
 
 .myd-sessions-list {
-  margin: 8px 0;
+  margin: 4px 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 8px 12px;
+  gap: 3px;
+  padding: 6px 10px;
   background: var(--bg);
   border-radius: var(--radius-md);
 }

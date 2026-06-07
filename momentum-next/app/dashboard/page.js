@@ -86,7 +86,7 @@ function ArrowConnector({ label }) {
 }
 
 // Task card with session engine — matches sketch design exactly
-function TaskFlowCard({ task, onSessionAction, onPlusClick }) {
+function TaskFlowCard({ task, onSessionAction, onPlusClick, onRemove }) {
     const totalMs = (task.sessions || []).reduce((sum, s) => {
         if (s.endTime) return sum + (new Date(s.endTime) - new Date(s.startTime));
         if (s.startTime && task.status === 'running') return sum + (Date.now() - new Date(s.startTime));
@@ -106,9 +106,16 @@ function TaskFlowCard({ task, onSessionAction, onPlusClick }) {
             <div className={`myd-task-card ${isRunning ? 'myd-task-running' : isPaused ? 'myd-task-paused' : isCompleted ? 'myd-task-completed' : ''}`}>
 
                 {/* Task name + dream */}
-                <div className="myd-task-card-header">
+                <div className="myd-task-card-header" style={{ position: 'relative' }}>
                     <div className={`myd-task-status-dot ${isRunning ? 'dot-run' : isPaused ? 'dot-pause' : isCompleted ? 'dot-done' : ''}`} />
                     <div className="myd-task-name">{task.name}</div>
+                    <button 
+                        className="myd-task-remove-btn" 
+                        onClick={(e) => { e.stopPropagation(); onRemove(task.id); }}
+                        title="Remove task from day map"
+                    >
+                        ✕
+                    </button>
                 </div>
                 {task.dreamTitle && <div className="myd-task-dream-badge">{task.dreamTitle}</div>}
 
@@ -203,22 +210,7 @@ function TaskFlowCard({ task, onSessionAction, onPlusClick }) {
     );
 }
 
-function MapYourDay({ appData, persist, onNavigate }) {
-    // ── State ────────────────────────────────────────────────
-    const [flowState, setFlowState] = useState(() => {
-        const key = `myd_flow_${new Date().toDateString()}`;
-        try {
-            const saved = localStorage.getItem(key);
-            if (saved) return JSON.parse(saved);
-        } catch {}
-        return {
-            date: new Date().toDateString(),
-            rootTaskIds: [],      // task IDs directly spawned from To-Do List
-            tasks: {},            // { [taskId]: TaskObject }
-            children: {},         // { [parentTaskId]: [childTaskId, ...] }
-        };
-    });
-
+function MapYourDay({ appData, persist, onNavigate, flowState, setFlowState }) {
     const [todoOpen, setTodoOpen] = useState(false);
     const [todoContext, setTodoContext] = useState(null); // null = from root, string = parent taskId
     const [selectedTasks, setSelectedTasks] = useState([]);
@@ -230,12 +222,6 @@ function MapYourDay({ appData, persist, onNavigate }) {
         const iv = setInterval(() => setTicker(t => t + 1), 1000);
         return () => clearInterval(iv);
     }, []);
-
-    // Persist flow state to localStorage
-    useEffect(() => {
-        const key = `myd_flow_${new Date().toDateString()}`;
-        try { localStorage.setItem(key, JSON.stringify(flowState)); } catch {}
-    }, [flowState]);
 
     // ── All tasks from appData (habits + system tasks) ───────
     const allHabits = [];
@@ -279,6 +265,8 @@ function MapYourDay({ appData, persist, onNavigate }) {
                     id: taskId,
                     name: habit.name,
                     dreamTitle: habit.dreamTitle,
+                    dreamId: habit.dreamId,
+                    habitId: habit.sourceId,
                     status: 'active',
                     sessions: [],
                     addedAt: new Date().toISOString(),
@@ -314,6 +302,7 @@ function MapYourDay({ appData, persist, onNavigate }) {
             if (!task) return prev;
 
             const now = new Date().toISOString();
+            const wasCompleted = task.status === 'completed';
 
             if (action === 'start') {
                 task.status = 'running';
@@ -329,10 +318,92 @@ function MapYourDay({ appData, persist, onNavigate }) {
                 task.status = 'completed';
                 const last = task.sessions[task.sessions.length - 1];
                 if (last && !last.endTime) last.endTime = now;
+
+                // Sync completion status to the habit calendar
+                if (task.dreamId && task.habitId) {
+                    const today = new Date().getDate();
+                    const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
+                    const newData = JSON.parse(JSON.stringify(appData));
+                    const dream = newData.dreams.find(d => d.id === task.dreamId);
+                    if (dream) {
+                        const habit = dream.habits.find(h => h.id === task.habitId);
+                        if (habit) {
+                            if (!habit.tracking[mk]) habit.tracking[mk] = {};
+                            habit.tracking[mk][today] = true;
+                            setTimeout(() => persist(newData), 0);
+                        }
+                    }
+                }
             }
+
+            // Revert habit tracker completion if task is resumed/paused/started again
+            if (wasCompleted && action !== 'complete') {
+                if (task.dreamId && task.habitId) {
+                    const today = new Date().getDate();
+                    const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
+                    const newData = JSON.parse(JSON.stringify(appData));
+                    const dream = newData.dreams.find(d => d.id === task.dreamId);
+                    if (dream) {
+                        const habit = dream.habits.find(h => h.id === task.habitId);
+                        if (habit && habit.tracking[mk]) {
+                            delete habit.tracking[mk][today];
+                            setTimeout(() => persist(newData), 0);
+                        }
+                    }
+                }
+            }
+
             return next;
         });
     }
+
+    // ── Remove Task Handler ───────────────────────────────────
+    const handleRemoveTask = useCallback((taskId) => {
+        setFlowState(prev => {
+            const next = JSON.parse(JSON.stringify(prev));
+            const task = next.tasks[taskId];
+            if (!task) return prev;
+
+            const childIds = next.children[taskId] || [];
+
+            // Remove from parent's children list or rootTaskIds
+            let parentId = null;
+            Object.keys(next.children).forEach(pId => {
+                if (next.children[pId].includes(taskId)) {
+                    parentId = pId;
+                }
+            });
+
+            if (parentId) {
+                next.children[parentId] = next.children[parentId].filter(id => id !== taskId);
+                next.children[parentId].push(...childIds);
+            } else {
+                next.rootTaskIds = next.rootTaskIds.filter(id => id !== taskId);
+                next.rootTaskIds.push(...childIds);
+            }
+
+            // Remove task definition and its parent children list
+            delete next.tasks[taskId];
+            delete next.children[taskId];
+
+            // Sync: untick habit calendar if task was completed
+            if (task.status === 'completed' && task.dreamId && task.habitId) {
+                const today = new Date().getDate();
+                const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
+                const newData = JSON.parse(JSON.stringify(appData));
+                const dream = newData.dreams.find(d => d.id === task.dreamId);
+                if (dream) {
+                    const habit = dream.habits.find(h => h.id === task.habitId);
+                    if (habit && habit.tracking[mk]) {
+                        delete habit.tracking[mk][today];
+                        setTimeout(() => persist(newData), 0);
+                    }
+                }
+            }
+
+            return next;
+        });
+    }, [appData, persist, setFlowState]);
 
     // ── Render a task and its children recursively ───────────
     function renderTaskBranch(taskId, depth = 0) {
@@ -346,6 +417,7 @@ function MapYourDay({ appData, persist, onNavigate }) {
                     task={task}
                     onSessionAction={sessionAction}
                     onPlusClick={(id) => openTodoList(id)}
+                    onRemove={handleRemoveTask}
                 />
                 {children.length > 0 && (
                     <div className="myd-children-row">
@@ -589,6 +661,30 @@ export default function DashboardPage() {
     const [deletingType, setDeletingType] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
 
+    // ─── Lifted Map Your Day Flow State ─────────────────────
+    const [flowState, setFlowState] = useState(() => {
+        if (typeof window === 'undefined') return { date: new Date().toDateString(), rootTaskIds: [], tasks: {}, children: {} };
+        const key = `myd_flow_${new Date().toDateString()}`;
+        try {
+            const saved = localStorage.getItem(key);
+            if (saved) return JSON.parse(saved);
+        } catch {}
+        return {
+            date: new Date().toDateString(),
+            rootTaskIds: [],      // task IDs directly spawned from To-Do List
+            tasks: {},            // { [taskId]: TaskObject }
+            children: {},         // { [parentTaskId]: [childTaskId, ...] }
+        };
+    });
+
+    // Sync flowState to localStorage
+    useEffect(() => {
+        const key = `myd_flow_${new Date().toDateString()}`;
+        try {
+            localStorage.setItem(key, JSON.stringify(flowState));
+        } catch {}
+    }, [flowState]);
+
     // Chart refs
     const dailyChartRef = useRef(null);
     const dailyChartInst = useRef(null);
@@ -710,11 +806,6 @@ export default function DashboardPage() {
         const tracking = {};
         tracking[mk] = {};
 
-        // Auto-fill NA for all prior days of THIS month only
-        for (let d = 1; d < today; d++) {
-            tracking[mk][d] = 'na';
-        }
-
         const habit = { id: generateId(), name: name.trim(), createdAt: new Date().toISOString(), tracking, goals: {} };
         const newData = { ...appData, dreams: appData.dreams.map(d => d.id === dreamId ? { ...d, habits: [...d.habits, habit] } : d) };
         persist(newData);
@@ -731,10 +822,57 @@ export default function DashboardPage() {
         if (!habit) return;
         if (!habit.tracking[mk]) habit.tracking[mk] = {};
         const current = habit.tracking[mk][day];
-        if (!current) habit.tracking[mk][day] = true;
-        else if (current === true) habit.tracking[mk][day] = 'na';
-        else delete habit.tracking[mk][day];
+        if (current === true) {
+            delete habit.tracking[mk][day];
+        } else {
+            habit.tracking[mk][day] = true;
+        }
         persist(newData);
+
+        // Sync to Map Your Day flow state:
+        const todayDate = new Date();
+        const isToday = (day === todayDate.getDate() && mk === monthKey(todayDate.getFullYear(), todayDate.getMonth()));
+        if (isToday) {
+            setFlowState(prev => {
+                const next = JSON.parse(JSON.stringify(prev));
+                const nextVal = habit.tracking[mk][day];
+                let foundTask = false;
+                Object.values(next.tasks).forEach(task => {
+                    if (task.habitId === habitId || (task.name === habit.name && task.dreamTitle === dream.title)) {
+                        foundTask = true;
+                        if (nextVal === true) {
+                            task.status = 'completed';
+                            if (!task.sessions || task.sessions.length === 0) {
+                                task.sessions = [{ startTime: new Date().toISOString(), endTime: new Date().toISOString() }];
+                            } else {
+                                const last = task.sessions[task.sessions.length - 1];
+                                if (last && !last.endTime) last.endTime = new Date().toISOString();
+                            }
+                        } else {
+                            task.status = 'active';
+                        }
+                    }
+                });
+
+                if (!foundTask && nextVal === true) {
+                    const taskId = `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+                    next.tasks[taskId] = {
+                        id: taskId,
+                        name: habit.name,
+                        dreamTitle: dream.title,
+                        dreamId: dreamId,
+                        habitId: habitId,
+                        status: 'completed',
+                        sessions: [{ startTime: new Date().toISOString(), endTime: new Date().toISOString() }],
+                        addedAt: new Date().toISOString(),
+                    };
+                    if (!next.rootTaskIds) next.rootTaskIds = [];
+                    next.rootTaskIds.push(taskId);
+                }
+
+                return next;
+            });
+        }
     }
     function toggleHabitDay(dreamId, habitId, mk, day) {
         const newData = JSON.parse(JSON.stringify(appData));
@@ -744,8 +882,53 @@ export default function DashboardPage() {
         if (!habit) return;
         if (!habit.tracking[mk]) habit.tracking[mk] = {};
         habit.tracking[mk][day] = !habit.tracking[mk][day];
-        if (!habit.tracking[mk][day]) delete habit.tracking[mk][day];
+        const isChecked = habit.tracking[mk][day];
+        if (!isChecked) delete habit.tracking[mk][day];
         persist(newData);
+
+        // Sync to Map Your Day flow state:
+        const todayDate = new Date();
+        const isToday = (day === todayDate.getDate() && mk === monthKey(todayDate.getFullYear(), todayDate.getMonth()));
+        if (isToday) {
+            setFlowState(prev => {
+                const next = JSON.parse(JSON.stringify(prev));
+                let foundTask = false;
+                Object.values(next.tasks).forEach(task => {
+                    if (task.habitId === habitId || (task.name === habit.name && task.dreamTitle === dream.title)) {
+                        foundTask = true;
+                        if (isChecked) {
+                            task.status = 'completed';
+                            if (!task.sessions || task.sessions.length === 0) {
+                                task.sessions = [{ startTime: new Date().toISOString(), endTime: new Date().toISOString() }];
+                            } else {
+                                const last = task.sessions[task.sessions.length - 1];
+                                if (last && !last.endTime) last.endTime = new Date().toISOString();
+                            }
+                        } else {
+                            task.status = 'active';
+                        }
+                    }
+                });
+
+                if (!foundTask && isChecked) {
+                    const taskId = `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+                    next.tasks[taskId] = {
+                        id: taskId,
+                        name: habit.name,
+                        dreamTitle: dream.title,
+                        dreamId: dreamId,
+                        habitId: habitId,
+                        status: 'completed',
+                        sessions: [{ startTime: new Date().toISOString(), endTime: new Date().toISOString() }],
+                        addedAt: new Date().toISOString(),
+                    };
+                    if (!next.rootTaskIds) next.rootTaskIds = [];
+                    next.rootTaskIds.push(taskId);
+                }
+
+                return next;
+            });
+        }
     }
     function setHabitGoal(dreamId, habitId, mk, goalValue) {
         const newData = JSON.parse(JSON.stringify(appData));
@@ -930,8 +1113,6 @@ export default function DashboardPage() {
                                 <th className="habit-name-col">Habit</th>
                                 <th className="goal-col">Goal</th>
                                 {Array.from({ length: days }, (_, i) => <th key={i + 1} className="day-header">{i + 1}</th>)}
-                                <th className="progress-col">Done</th>
-                                <th className="progress-end-col">Progress</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -956,19 +1137,10 @@ export default function DashboardPage() {
                                             const d = i + 1;
                                             if (progress.goal === 0) return <td key={d}><span className="day-na">NA</span></td>;
                                             const val = tracking[d];
-                                            const stateClass = val === true ? 'state-done' : val === 'na' ? 'state-na' : 'state-empty';
-                                            const label = val === true ? '\u2713' : val === 'na' ? 'NA' : '';
+                                            const stateClass = val === true ? 'state-done' : 'state-empty';
+                                            const label = val === true ? '\u2713' : '';
                                             return <td key={d}><button className={`day-tri ${stateClass}`} onClick={() => cycleHabitDay(currentDreamId, habit.id, mk, d)}>{label}</button></td>;
                                         })}
-                                        <td className="progress-col">{progress.goal === 0 ? 0 : progress.done}</td>
-                                        <td className="progress-end-col">
-                                            {progress.goal === 0 ? <span className="habit-progress-text" style={{ color: 'var(--text-muted)' }}><b>N/A</b></span> : (
-                                                <div className="habit-progress-visual">
-                                                    <div className="habit-progress-bar-bg"><div className="habit-progress-bar-fg" style={{ width: pctClamped + '%', background: barColor }} /></div>
-                                                    <span className="habit-progress-text">{progress.done}/{progress.goal} <b>{progress.pct}%</b></span>
-                                                </div>
-                                            )}
-                                        </td>
                                     </tr>
                                 );
                             })}
@@ -979,8 +1151,6 @@ export default function DashboardPage() {
                                 {calcDailyProgress(dream, currentYear, currentMonth).map(d => (
                                     <td key={d.day}><span className={`daily-pct ${d.pct === 100 ? 'full' : d.pct > 0 ? 'partial' : 'zero'}`}>{d.pct}%</span></td>
                                 ))}
-                                <td className="progress-col"></td>
-                                <td className="progress-end-col"></td>
                             </tr>
                         </tbody>
                     </table>
@@ -1092,7 +1262,7 @@ export default function DashboardPage() {
                 let cs = 0, bs = 0;
                 for (let d = 1; d <= days; d++) {
                     if (tracking[d] === true) { cs++; if (cs > bs) bs = cs; }
-                    else if (tracking[d] !== 'na') cs = 0;
+                    else cs = 0;
                 }
                 habitStats.push({ name: h.name, dreamTitle: dream.title, done, total: goal, pct: goal > 0 ? Math.round((done / goal) * 100) : 0, streak: bs });
             });
@@ -1109,7 +1279,7 @@ export default function DashboardPage() {
                 if (goal === 0) return;
                 todayTotal++;
                 const val = (h.tracking[mk] || {})[today];
-                if (val === true || val === 'na') todayDone++;
+                if (val === true) todayDone++;
             });
         });
         const todayPct = todayTotal > 0 ? Math.round((todayDone / todayTotal) * 100) : 0;
@@ -1131,7 +1301,7 @@ export default function DashboardPage() {
                     if (goal === 0) return;
                     dayTotal++;
                     const val = (h.tracking[mk] || {})[d];
-                    if (val === true || val === 'na') dayDone++;
+                    if (val === true) dayDone++;
                 });
             });
             const pct = dayTotal > 0 ? Math.round((dayDone / dayTotal) * 100) : 0;
@@ -1325,7 +1495,15 @@ export default function DashboardPage() {
 
             {/* Map Your Day Page */}
             <section className={`page${page === 'map' ? ' active' : ''}`}>
-                {page === 'map' && <MapYourDay appData={appData} persist={persist} onNavigate={setPage} />}
+                {page === 'map' && (
+                    <MapYourDay 
+                        appData={appData} 
+                        persist={persist} 
+                        onNavigate={setPage} 
+                        flowState={flowState}
+                        setFlowState={setFlowState}
+                    />
+                )}
             </section>
 
             {/* Dream Detail Page */}

@@ -37,9 +37,9 @@
       // Removed strict premium check for now to allow viewing the dashboard
     }
   </script>
-  <script type="module" crossorigin src="/assets/main-96Ra3WGA.js"></script>
+  <script type="module" crossorigin src="/assets/main-nRFFhXh8.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/index-ruigzImx.js">
-  <link rel="stylesheet" crossorigin href="/assets/main-CbBk4hGI.css">
+  <link rel="stylesheet" crossorigin href="/assets/main-CG-6aF9M.css">
 </head>
 
 <body>
@@ -53,6 +53,7 @@
     <div class="nav-right" style="display: flex; align-items: center; gap: 20px;">
       <div class="nav-links">
         <a href="#landing" class="nav-link" data-page="landing">Dreams</a>
+        <a href="#map" class="nav-link" data-page="map">Map Your Day</a>
         <a href="#dashboard" class="nav-link" data-page="dashboard">Dashboard</a>
       </div>
       <div class="user-profile" id="user-profile">
@@ -219,7 +220,7 @@
         <div class="stat-card">
           <div class="stat-value" id="stat-longest-streak">0</div>
           <div class="stat-label">Longest Streak</div>
-          <div class="stat-habit-name" id="stat-streak-habit">—</div>
+
         </div>
         <div class="stat-card">
           <div class="stat-value" id="stat-consistency">0%</div>
@@ -233,6 +234,123 @@
       <p>"Small habits. Massive transformation."</p>
     </div>
 
+  </section>
+
+  <!-- ========== PAGE: MAP YOUR DAY ========== -->
+  <section id="page-map" class="page">
+    <!-- Header -->
+    <div class="myd-page-header">
+      <div class="myd-header-left">
+        <h1 class="myd-page-title">Map Your Day</h1>
+        <p class="myd-page-sub" id="myd-page-sub-date">Visual productivity engine</p>
+      </div>
+      <div class="myd-header-right">
+        <div class="myd-header-stats">
+          <div class="myd-header-stat">
+            <span class="myd-hs-val" id="myd-stat-total">0</span>
+            <span class="myd-hs-label">Total Tasks</span>
+          </div>
+          <div class="myd-header-stat">
+            <span class="myd-hs-val" style="color: var(--blue);" id="myd-stat-in-flow">0</span>
+            <span class="myd-hs-label">In Flow</span>
+          </div>
+          <div class="myd-header-stat">
+            <span class="myd-hs-val" style="color: var(--green);" id="myd-stat-done">0</span>
+            <span class="myd-hs-label">Done</span>
+          </div>
+          <div class="myd-header-stat">
+            <span class="myd-hs-val" style="color: var(--blue);" id="myd-stat-time">0m 0s</span>
+            <span class="myd-hs-label">Work Time</span>
+          </div>
+        </div>
+        <button class="myd-btn myd-btn-outline" id="myd-btn-summary">
+          📊 Day Summary
+        </button>
+      </div>
+    </div>
+
+    <!-- Flow Canvas -->
+    <div class="myd-flow-canvas">
+      <!-- Root Date Node -->
+      <div class="myd-root-node">
+        <div class="myd-date-chip" id="myd-canvas-date">
+          Date
+        </div>
+      </div>
+
+      <!-- Tasks Flow Container -->
+      <div id="myd-flow-branches-container">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- To-Do List Modal -->
+    <div class="myd-modal-overlay" id="myd-todo-modal" style="display: none;">
+      <div class="myd-modal">
+        <div class="myd-modal-header">
+          <div>
+            <h3 class="myd-modal-title">📋 To-Do List</h3>
+            <p class="myd-modal-sub" id="myd-todo-modal-sub">
+              0 tasks available · 0 selected
+            </p>
+          </div>
+          <button class="myd-modal-close" id="myd-todo-modal-close">&times;</button>
+        </div>
+        <div class="myd-modal-body">
+          <div class="myd-todo-list" id="myd-todo-modal-list">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+        <div class="myd-modal-footer">
+          <button class="myd-btn myd-btn-secondary" id="myd-todo-modal-cancel">Cancel</button>
+          <button class="myd-btn myd-btn-primary" id="myd-todo-modal-done" disabled>
+            Done (0 selected)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day Summary Modal -->
+    <div class="myd-modal-overlay" id="myd-summary-modal" style="display: none;">
+      <div class="myd-modal myd-modal-wide">
+        <div class="myd-modal-header">
+          <div>
+            <h3 class="myd-modal-title">📊 Day Summary</h3>
+            <p class="myd-modal-sub" id="myd-summary-modal-date">Date</p>
+          </div>
+          <button class="myd-modal-close" id="myd-summary-modal-close">&times;</button>
+        </div>
+        <div class="myd-modal-body">
+          <div class="myd-summary-stats">
+            <div class="myd-summary-stat">
+              <span class="myd-summary-val" id="myd-sum-stat-in-flow">0</span>
+              <span class="myd-summary-label">Tasks in Flow</span>
+            </div>
+            <div class="myd-summary-stat">
+              <span class="myd-summary-val" style="color: var(--green);" id="myd-sum-stat-done">0</span>
+              <span class="myd-summary-label">Completed</span>
+            </div>
+            <div class="myd-summary-stat">
+              <span class="myd-summary-val" style="color: var(--blue);" id="myd-sum-stat-time">0m 0s</span>
+              <span class="myd-summary-label">Total Work Time</span>
+            </div>
+            <div class="myd-summary-stat">
+              <span class="myd-summary-val" id="myd-sum-stat-total">0</span>
+              <span class="myd-summary-label">Total Tasks</span>
+            </div>
+          </div>
+          <div class="myd-summary-task-list" id="myd-summary-modal-list">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+        <div class="myd-modal-footer">
+          <button class="myd-btn myd-btn-secondary" id="myd-summary-modal-reset">
+            🔄 Reset Day
+          </button>
+          <button class="myd-btn myd-btn-primary" id="myd-summary-modal-close-btn">Close</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ========== PAGE: DASHBOARD ========== -->
@@ -261,7 +379,7 @@
       <div class="stat-card stat-card-streak">
         <div class="stat-icon">🔥</div>
         <div class="stat-value" id="dash-streak">0</div>
-        <div class="stat-sub" id="dash-streak-habit"></div>
+
         <div class="stat-label">Best Streak</div>
         <div class="momentum-tooltip streak-tooltip">
           <h4>Top 3 Streaks</h4>

@@ -44,7 +44,7 @@ export function calcDailyProgress(dream, year, month) {
             const goal = getHabitGoal(h, mk, totalDays);
             if (goal === 0) { done++; return; }
             const val = (h.tracking[mk] || {})[d];
-            if (val === true || val === 'na') done++;
+            if (val === true) done++;
         });
         result.push({ day: d, done, total: habitCount, pct: habitCount > 0 ? Math.round((done / habitCount) * 100) : 0 });
     }
@@ -65,7 +65,7 @@ export function calcStreaks(dream, year, month) {
         for (let d = 1; d <= totalDays; d++) {
             const val = tracking[d];
             if (val === true) { current++; if (current > best) best = current; }
-            else if (val !== 'na') { current = 0; }
+            else { current = 0; }
         }
         if (best > longestStreak) { longestStreak = best; bestHabitName = h.name; }
     });
@@ -77,7 +77,7 @@ export function calcHabitProgress(habit, year, month) {
     const totalDays = daysInMonth(year, month);
     const tracking = habit.tracking[mk] || {};
     const done = Object.values(tracking).filter(v => v === true).length;
-    const naCount = Object.values(tracking).filter(v => v === 'na').length;
+    const naCount = 0;
     const goal = getHabitGoal(habit, mk, totalDays);
     if (goal === 0) return { done: 0, goal: 0, total: totalDays, naCount, pct: 100 };
     return { done, goal, total: totalDays, naCount, pct: Math.round((done / goal) * 100) };
@@ -147,7 +147,7 @@ export function calcMomentumScore(appData, yr, mo, overallPct, bestStreak) {
                 if (goal === 0) return;
                 dayTotal++;
                 const val = (h.tracking[mk] || {})[d];
-                if (val === true || val === 'na') dayDone++;
+                if (val === true) dayDone++;
             });
         });
         if (dayTotal > 0 && (dayDone / dayTotal) >= 0.5) consistentDays++;
