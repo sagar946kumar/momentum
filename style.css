@@ -865,9 +865,9 @@ body {
 .habit-grid th.habit-name-col {
   text-align: left;
   padding-left: 8px;
-  width: 240px;
-  min-width: 240px;
-  max-width: 240px;
+  width: 144px;
+  min-width: 144px;
+  max-width: 144px;
   position: sticky;
   left: 0;
   z-index: 12;
@@ -880,9 +880,9 @@ body {
   font-weight: 600;
   font-size: 0.75rem;
   color: var(--text-primary);
-  width: 240px;
-  min-width: 240px;
-  max-width: 240px;
+  width: 144px;
+  min-width: 144px;
+  max-width: 144px;
   position: sticky;
   left: 0;
   background: var(--bg-card);
@@ -927,7 +927,7 @@ body {
 /* Goal Column */
 .habit-grid th.goal-col {
   position: sticky;
-  left: 240px;
+  left: 144px;
   z-index: 12;
   background: var(--bg);
   width: 50px !important;
@@ -937,7 +937,7 @@ body {
 
 .habit-grid td.goal-col {
   position: sticky;
-  left: 240px;
+  left: 144px;
   z-index: 10;
   background: var(--bg-card);
   width: 50px !important;
@@ -2526,21 +2526,30 @@ body {
   }
 
   .habit-grid {
-    min-width: 1100px;
-    table-layout: fixed;
+    min-width: auto;
+    table-layout: auto;
   }
 
-  /* Sticky First Column for Name */
+  /* Sticky First Column for Name — 144px = ~18 chars */
+  .habit-grid th.habit-name-col,
+  .habit-grid td.habit-name-cell,
   .habit-name-col {
     position: sticky;
     left: 0;
     z-index: 50;
     background: white !important;
-    width: 140px !important;
-    min-width: 140px !important;
+    width: 144px !important;
+    min-width: 144px !important;
+    max-width: 144px !important;
     box-shadow: 4px 0 8px rgba(0,0,0,0.05);
   }
-  
+
+  /* Hide Goal column entirely on mobile */
+  .habit-grid th.goal-col,
+  .habit-grid td.goal-col {
+    display: none !important;
+  }
+
   .habit-name {
     position: sticky;
     left: 0;
@@ -2549,9 +2558,9 @@ body {
   }
 
   .day-header, .day-cell, .summary-day {
-    width: 38px !important;
-    min-width: 38px !important;
-    height: 48px;
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 40px;
   }
 
   /* Header & Navigation Spacing */
@@ -3470,5 +3479,27 @@ body {
   .btn-add-habit-sm {
     padding: 7px 12px;
     font-size: 0.78rem;
+  }
+
+  /* Hide Goal column on mobile */
+  .habit-grid th.goal-col,
+  .habit-grid td.goal-col {
+    display: none !important;
+  }
+
+  /* Lock habit name to 144px (~18 chars) on mobile */
+  .habit-grid th.habit-name-col,
+  .habit-grid td.habit-name-cell {
+    width: 144px !important;
+    min-width: 144px !important;
+    max-width: 144px !important;
+  }
+
+  /* Compact day cells on mobile */
+  .habit-grid th.day-header,
+  .habit-grid td:not(.habit-name-cell):not(.goal-col) {
+    width: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
   }
 }
