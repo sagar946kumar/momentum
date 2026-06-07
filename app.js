@@ -1299,6 +1299,7 @@ import { createClient } from '@supabase/supabase-js';
         e.stopPropagation();
         currentMonth = parseInt(btn.dataset.month);
         monthMenu.classList.remove('show');
+        monthTrigger.closest('.custom-dropdown').classList.remove('open');
         renderDreamPage();
       });
     });
@@ -1308,6 +1309,7 @@ import { createClient } from '@supabase/supabase-js';
         e.stopPropagation();
         currentYear = parseInt(btn.dataset.year);
         yearMenu.classList.remove('show');
+        yearTrigger.closest('.custom-dropdown').classList.remove('open');
         renderDreamPage();
       });
     });
@@ -2389,14 +2391,25 @@ import { createClient } from '@supabase/supabase-js';
 
     monthTrigger.addEventListener('click', (e) => {
       e.stopPropagation();
+      const parent = monthTrigger.closest('.custom-dropdown');
+      parent.classList.toggle('open');
       monthMenu.classList.toggle('show');
+      
+      const yearParent = yearTrigger.closest('.custom-dropdown');
+      yearParent.classList.remove('open');
       yearMenu.classList.remove('show');
     });
 
     yearTrigger.addEventListener('click', (e) => {
       e.stopPropagation();
+      const parent = yearTrigger.closest('.custom-dropdown');
+      parent.classList.toggle('open');
       yearMenu.classList.toggle('show');
+      
+      const monthParent = monthTrigger.closest('.custom-dropdown');
+      monthParent.classList.remove('open');
       monthMenu.classList.remove('show');
+      
       if (yearMenu.classList.contains('show')) {
         const active = yearMenu.querySelector('.dropdown-item.active');
         if (active) {
@@ -2407,7 +2420,9 @@ import { createClient } from '@supabase/supabase-js';
 
     // Close on outside click
     document.addEventListener('click', () => {
+      monthTrigger.closest('.custom-dropdown').classList.remove('open');
       monthMenu.classList.remove('show');
+      yearTrigger.closest('.custom-dropdown').classList.remove('open');
       yearMenu.classList.remove('show');
     });
 
