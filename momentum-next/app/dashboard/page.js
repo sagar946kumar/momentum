@@ -22,6 +22,7 @@ function Navbar({ user, onLogout, currentPage, onNavigate }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                 <div className="nav-links">
                     <span className={`nav-link${currentPage === 'landing' || currentPage === 'dream' ? ' active' : ''}`} onClick={() => onNavigate('landing')}>Dreams</span>
+                    <span className={`nav-link${currentPage === 'map' ? ' active' : ''}`} onClick={() => onNavigate('map')}>Map Your Day</span>
                     <span className={`nav-link${currentPage === 'dashboard' ? ' active' : ''}`} onClick={() => onNavigate('dashboard')}>Dashboard</span>
                 </div>
                 {user && (
@@ -50,6 +51,521 @@ function Modal({ id, open, onClose, title, children, footer }) {
                 {footer && <div className="modal-footer">{footer}</div>}
             </div>
         </div>
+    );
+}
+
+// ─── Map Your Day: Full System ───────────────────────────
+
+// Utility: format milliseconds to "Xm Ys"
+function fmtMs(ms) {
+    if (!ms || ms <= 0) return '0m 0s';
+    const totalSec = Math.floor(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m}m ${s}s`;
+}
+
+// Utility: format timestamp to HH:MM
+function fmtTime(iso) {
+    if (!iso) return '--:--';
+    const d = new Date(iso);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+// Arrow SVG connector between nodes
+function ArrowConnector({ label }) {
+    return (
+        <div className="myd-arrow-connector">
+            <div className="myd-arrow-line" />
+            <svg className="myd-arrow-head" width="12" height="8" viewBox="0 0 12 8">
+                <path d="M6 8L0 0h12z" fill="var(--blue)" />
+            </svg>
+            {label && <div className="myd-arrow-label">{label}</div>}
+        </div>
+    );
+}
+
+// Task card with session engine
+function TaskFlowCard({ task, onSessionAction, onPlusClick, isLast }) {
+    const totalMs = (task.sessions || []).reduce((sum, s) => {
+        if (s.endTime) return sum + (new Date(s.endTime) - new Date(s.startTime));
+        if (s.startTime && task.status === 'running') {
+            return sum + (Date.now() - new Date(s.startTime));
+        }
+        return sum;
+    }, 0);
+
+    const isRunning = task.status === 'running';
+    const isPaused = task.status === 'paused';
+    const isCompleted = task.status === 'completed';
+    const isActive = task.status === 'active' || isRunning || isPaused;
+
+    const currentSession = task.sessions && task.sessions[task.sessions.length - 1];
+
+    return (
+        <div className="myd-task-branch">
+            {/* Task Node */}
+            <div className={`myd-task-card ${isCompleted ? 'myd-task-completed' : isRunning ? 'myd-task-running' : isPaused ? 'myd-task-paused' : ''}`}>
+                <div className="myd-task-card-header">
+                    <div className="myd-task-status-dot" />
+                    <span className="myd-task-name">{task.name}</span>
+                    {task.dreamTitle && (
+                        <span className="myd-task-dream-badge">{task.dreamTitle}</span>
+                    )}
+                </div>
+
+                {/* Sessions List */}
+                {task.sessions && task.sessions.length > 0 && (
+                    <div className="myd-sessions-list">
+                        {task.sessions.map((s, i) => (
+                            <div key={i} className="myd-session-row">
+                                <span className="myd-session-num">Session {i + 1}</span>
+                                <span className="myd-session-time">
+                                    {fmtTime(s.startTime)} → {s.endTime ? fmtTime(s.endTime) : <span className="myd-session-live">● live</span>}
+                                </span>
+                                {s.endTime && (
+                                    <span className="myd-session-dur">{fmtMs(new Date(s.endTime) - new Date(s.startTime))}</span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Controls */}
+                {!isCompleted && (
+                    <div className="myd-task-controls">
+                        {!isRunning && !isPaused && task.status === 'active' && (
+                            <button className="myd-btn myd-btn-start" onClick={() => onSessionAction(task.id, 'start')}>
+                                ▶ Start
+                            </button>
+                        )}
+                        {isRunning && (
+                            <>
+                                <button className="myd-btn myd-btn-pause" onClick={() => onSessionAction(task.id, 'pause')}>
+                                    ⏸ Pause
+                                </button>
+                                <button className="myd-btn myd-btn-complete" onClick={() => onSessionAction(task.id, 'complete')}>
+                                    ✓ Complete
+                                </button>
+                            </>
+                        )}
+                        {isPaused && (
+                            <>
+                                <button className="myd-btn myd-btn-start" onClick={() => onSessionAction(task.id, 'resume')}>
+                                    ▶ Resume
+                                </button>
+                                <button className="myd-btn myd-btn-complete" onClick={() => onSessionAction(task.id, 'complete')}>
+                                    ✓ Complete
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* Total Time */}
+                {isCompleted && (
+                    <div className="myd-task-total">
+                        <span>✓ Completed</span>
+                        <span className="myd-task-total-time">
+                            {(task.sessions || []).length} session{(task.sessions || []).length !== 1 ? 's' : ''} · Total: {fmtMs(totalMs)}
+                        </span>
+                    </div>
+                )}
+                {isRunning && (
+                    <div className="myd-task-running-indicator">
+                        <span className="myd-pulse" /> Running…
+                    </div>
+                )}
+                {isPaused && (
+                    <div className="myd-task-paused-indicator">
+                        ⏸ Paused · {fmtMs(totalMs)} so far
+                    </div>
+                )}
+            </div>
+
+            {/* Plus button below task */}
+            {!isCompleted && isActive && (
+                <>
+                    <ArrowConnector />
+                    <button className="myd-plus-btn" onClick={() => onPlusClick(task.id)}>
+                        +
+                    </button>
+                </>
+            )}
+            {isCompleted && (
+                <>
+                    <ArrowConnector label={`Total: ${fmtMs(totalMs)}`} />
+                    <button className="myd-plus-btn myd-plus-btn-completed" onClick={() => onPlusClick(task.id)}>
+                        +
+                    </button>
+                </>
+            )}
+        </div>
+    );
+}
+
+function MapYourDay({ appData, persist, onNavigate }) {
+    // ── State ────────────────────────────────────────────────
+    const [flowState, setFlowState] = useState(() => {
+        const key = `myd_flow_${new Date().toDateString()}`;
+        try {
+            const saved = localStorage.getItem(key);
+            if (saved) return JSON.parse(saved);
+        } catch {}
+        return {
+            date: new Date().toDateString(),
+            rootTaskIds: [],      // task IDs directly spawned from To-Do List
+            tasks: {},            // { [taskId]: TaskObject }
+            children: {},         // { [parentTaskId]: [childTaskId, ...] }
+        };
+    });
+
+    const [todoOpen, setTodoOpen] = useState(false);
+    const [todoContext, setTodoContext] = useState(null); // null = from root, string = parent taskId
+    const [selectedTasks, setSelectedTasks] = useState([]);
+    const [ticker, setTicker] = useState(0);
+    const [summaryOpen, setSummaryOpen] = useState(false);
+
+    // Tick every second for live timers
+    useEffect(() => {
+        const iv = setInterval(() => setTicker(t => t + 1), 1000);
+        return () => clearInterval(iv);
+    }, []);
+
+    // Persist flow state to localStorage
+    useEffect(() => {
+        const key = `myd_flow_${new Date().toDateString()}`;
+        try { localStorage.setItem(key, JSON.stringify(flowState)); } catch {}
+    }, [flowState]);
+
+    // ── All tasks from appData (habits + system tasks) ───────
+    const allHabits = [];
+    (appData.dreams || []).forEach(d => {
+        (d.habits || []).forEach(h => {
+            allHabits.push({ id: `dream_${d.id}_${h.id}`, name: h.name, dreamTitle: d.title, sourceId: h.id, dreamId: d.id });
+        });
+    });
+
+    // Tasks not yet in the flow
+    const usedNames = new Set(Object.values(flowState.tasks).map(t => t.name));
+    const availableTasks = allHabits.filter(h => !usedNames.has(h.name));
+    const completedCount = Object.values(flowState.tasks).filter(t => t.status === 'completed').length;
+    const totalInFlow = Object.keys(flowState.tasks).length;
+
+    // ── Open To-Do selector ──────────────────────────────────
+    function openTodoList(parentId = null) {
+        setTodoContext(parentId);
+        setSelectedTasks([]);
+        setTodoOpen(true);
+    }
+
+    function toggleTaskSelect(habitId) {
+        setSelectedTasks(prev =>
+            prev.includes(habitId) ? prev.filter(x => x !== habitId) : [...prev, habitId]
+        );
+    }
+
+    function confirmTaskSelection() {
+        if (selectedTasks.length === 0) { setTodoOpen(false); return; }
+
+        setFlowState(prev => {
+            const next = JSON.parse(JSON.stringify(prev));
+            const newIds = [];
+
+            selectedTasks.forEach(habitId => {
+                const habit = availableTasks.find(h => h.id === habitId);
+                if (!habit) return;
+                const taskId = `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+                next.tasks[taskId] = {
+                    id: taskId,
+                    name: habit.name,
+                    dreamTitle: habit.dreamTitle,
+                    status: 'active',
+                    sessions: [],
+                    addedAt: new Date().toISOString(),
+                };
+                if (!next.children) next.children = {};
+
+                if (todoContext) {
+                    // Child of a task
+                    if (!next.children[todoContext]) next.children[todoContext] = [];
+                    next.children[todoContext].push(taskId);
+                } else {
+                    // Root tasks
+                    newIds.push(taskId);
+                }
+            });
+
+            if (!todoContext) {
+                next.rootTaskIds = [...(next.rootTaskIds || []), ...newIds];
+            }
+
+            return next;
+        });
+
+        setTodoOpen(false);
+        setSelectedTasks([]);
+    }
+
+    // ── Session Engine ────────────────────────────────────────
+    function sessionAction(taskId, action) {
+        setFlowState(prev => {
+            const next = JSON.parse(JSON.stringify(prev));
+            const task = next.tasks[taskId];
+            if (!task) return prev;
+
+            const now = new Date().toISOString();
+
+            if (action === 'start') {
+                task.status = 'running';
+                task.sessions = [...(task.sessions || []), { startTime: now, endTime: null }];
+            } else if (action === 'pause') {
+                task.status = 'paused';
+                const last = task.sessions[task.sessions.length - 1];
+                if (last && !last.endTime) last.endTime = now;
+            } else if (action === 'resume') {
+                task.status = 'running';
+                task.sessions = [...(task.sessions || []), { startTime: now, endTime: null }];
+            } else if (action === 'complete') {
+                task.status = 'completed';
+                const last = task.sessions[task.sessions.length - 1];
+                if (last && !last.endTime) last.endTime = now;
+            }
+            return next;
+        });
+    }
+
+    // ── Render a task and its children recursively ───────────
+    function renderTaskBranch(taskId, depth = 0) {
+        const task = flowState.tasks[taskId];
+        if (!task) return null;
+        const children = (flowState.children || {})[taskId] || [];
+
+        return (
+            <div key={taskId} className="myd-branch-wrapper" style={{ '--depth': depth }}>
+                <TaskFlowCard
+                    task={task}
+                    onSessionAction={sessionAction}
+                    onPlusClick={(id) => openTodoList(id)}
+                />
+                {children.length > 0 && (
+                    <div className="myd-children-row">
+                        {children.map(childId => renderTaskBranch(childId, depth + 1))}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // ── Summary ────────────────────────────────────────────────
+    const allTasks = Object.values(flowState.tasks);
+    const totalMs = allTasks.reduce((sum, t) => {
+        return sum + (t.sessions || []).reduce((s2, sess) => {
+            if (sess.endTime) return s2 + (new Date(sess.endTime) - new Date(sess.startTime));
+            if (!sess.endTime && t.status === 'running') return s2 + (Date.now() - new Date(sess.startTime));
+            return s2;
+        }, 0);
+    }, 0);
+
+    const dateStr = new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    return (
+        <>
+            {/* ── To-Do List Modal ──────────────────────────── */}
+            {todoOpen && (
+                <div className="myd-modal-overlay" onClick={() => setTodoOpen(false)}>
+                    <div className="myd-modal" onClick={e => e.stopPropagation()}>
+                        <div className="myd-modal-header">
+                            <div>
+                                <h3 className="myd-modal-title">📋 To-Do List</h3>
+                                <p className="myd-modal-sub">
+                                    {availableTasks.length} tasks available · {selectedTasks.length} selected
+                                </p>
+                            </div>
+                            <button className="myd-modal-close" onClick={() => setTodoOpen(false)}>×</button>
+                        </div>
+                        <div className="myd-modal-body">
+                            {availableTasks.length === 0 ? (
+                                <div className="myd-empty-state">🎉 All tasks are in the flow!</div>
+                            ) : (
+                                <div className="myd-todo-list">
+                                    {availableTasks.map(h => (
+                                        <label key={h.id} className={`myd-todo-item ${selectedTasks.includes(h.id) ? 'myd-todo-selected' : ''}`}>
+                                            <input
+                                                type="checkbox"
+                                                className="myd-todo-checkbox"
+                                                checked={selectedTasks.includes(h.id)}
+                                                onChange={() => toggleTaskSelect(h.id)}
+                                            />
+                                            <div className="myd-todo-info">
+                                                <span className="myd-todo-name">{h.name}</span>
+                                                <span className="myd-todo-dream">{h.dreamTitle}</span>
+                                            </div>
+                                            {selectedTasks.includes(h.id) && <span className="myd-todo-check">✓</span>}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <div className="myd-modal-footer">
+                            <button className="myd-btn myd-btn-secondary" onClick={() => setTodoOpen(false)}>Cancel</button>
+                            <button className="myd-btn myd-btn-primary" onClick={confirmTaskSelection} disabled={selectedTasks.length === 0}>
+                                Done ({selectedTasks.length} selected)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Summary Modal ─────────────────────────────── */}
+            {summaryOpen && (
+                <div className="myd-modal-overlay" onClick={() => setSummaryOpen(false)}>
+                    <div className="myd-modal myd-modal-wide" onClick={e => e.stopPropagation()}>
+                        <div className="myd-modal-header">
+                            <div>
+                                <h3 className="myd-modal-title">📊 Day Summary</h3>
+                                <p className="myd-modal-sub">{dateStr}</p>
+                            </div>
+                            <button className="myd-modal-close" onClick={() => setSummaryOpen(false)}>×</button>
+                        </div>
+                        <div className="myd-modal-body">
+                            <div className="myd-summary-stats">
+                                <div className="myd-summary-stat">
+                                    <span className="myd-summary-val">{totalInFlow}</span>
+                                    <span className="myd-summary-label">Tasks in Flow</span>
+                                </div>
+                                <div className="myd-summary-stat">
+                                    <span className="myd-summary-val" style={{ color: 'var(--green)' }}>{completedCount}</span>
+                                    <span className="myd-summary-label">Completed</span>
+                                </div>
+                                <div className="myd-summary-stat">
+                                    <span className="myd-summary-val" style={{ color: 'var(--blue)' }}>{fmtMs(totalMs)}</span>
+                                    <span className="myd-summary-label">Total Work Time</span>
+                                </div>
+                                <div className="myd-summary-stat">
+                                    <span className="myd-summary-val">{allHabits.length}</span>
+                                    <span className="myd-summary-label">Total Tasks</span>
+                                </div>
+                            </div>
+                            <div className="myd-summary-task-list">
+                                {allTasks.map(t => {
+                                    const tMs = (t.sessions || []).reduce((s, sess) => {
+                                        if (sess.endTime) return s + (new Date(sess.endTime) - new Date(sess.startTime));
+                                        return s;
+                                    }, 0);
+                                    return (
+                                        <div key={t.id} className="myd-summary-task-row">
+                                            <span className={`myd-summary-task-status ${t.status === 'completed' ? 'done' : t.status === 'running' ? 'running' : 'active'}`}>
+                                                {t.status === 'completed' ? '✓' : t.status === 'running' ? '●' : '○'}
+                                            </span>
+                                            <span className="myd-summary-task-name">{t.name}</span>
+                                            <span className="myd-summary-task-sessions">{(t.sessions || []).length} session{(t.sessions || []).length !== 1 ? 's' : ''}</span>
+                                            <span className="myd-summary-task-time">{tMs > 0 ? fmtMs(tMs) : '—'}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div className="myd-modal-footer">
+                            <button className="myd-btn myd-btn-secondary" onClick={() => {
+                                if (confirm('Reset the entire day map? This cannot be undone.')) {
+                                    setFlowState({ date: new Date().toDateString(), rootTaskIds: [], tasks: {}, children: {} });
+                                    setSummaryOpen(false);
+                                }
+                            }}>
+                                🔄 Reset Day
+                            </button>
+                            <button className="myd-btn myd-btn-primary" onClick={() => setSummaryOpen(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Main Page ─────────────────────────────────── */}
+            <div className="myd-page">
+
+                {/* Header */}
+                <div className="myd-page-header">
+                    <div className="myd-header-left">
+                        <h1 className="myd-page-title">Map Your Day</h1>
+                        <p className="myd-page-sub">Visual productivity engine · {dateStr}</p>
+                    </div>
+                    <div className="myd-header-right">
+                        <div className="myd-header-stats">
+                            <div className="myd-header-stat">
+                                <span className="myd-hs-val">{allHabits.length}</span>
+                                <span className="myd-hs-label">Total Tasks</span>
+                            </div>
+                            <div className="myd-header-stat">
+                                <span className="myd-hs-val" style={{ color: 'var(--blue)' }}>{totalInFlow}</span>
+                                <span className="myd-hs-label">In Flow</span>
+                            </div>
+                            <div className="myd-header-stat">
+                                <span className="myd-hs-val" style={{ color: 'var(--green)' }}>{completedCount}</span>
+                                <span className="myd-hs-label">Done</span>
+                            </div>
+                            <div className="myd-header-stat">
+                                <span className="myd-hs-val" style={{ color: 'var(--blue)' }}>{fmtMs(totalMs)}</span>
+                                <span className="myd-hs-label">Work Time</span>
+                            </div>
+                        </div>
+                        <button className="myd-btn myd-btn-outline" onClick={() => setSummaryOpen(true)}>
+                            📊 Day Summary
+                        </button>
+                    </div>
+                </div>
+
+                {/* Flow Canvas */}
+                <div className="myd-flow-canvas">
+
+                    {/* Root Date Node */}
+                    <div className="myd-root-node">
+                        <div className="myd-date-chip">
+                            {new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </div>
+                    </div>
+
+                    <ArrowConnector />
+
+                    {/* To-Do List Node */}
+                    <div className="myd-todo-node" onClick={() => openTodoList(null)}>
+                        <div className="myd-todo-node-icon">📋</div>
+                        <div className="myd-todo-node-content">
+                            <span className="myd-todo-node-title">To-Do List</span>
+                            <span className="myd-todo-node-count">
+                                {allHabits.length} tasks · {allHabits.length - totalInFlow} remaining
+                            </span>
+                        </div>
+                        <div className="myd-todo-node-cta">Select →</div>
+                    </div>
+
+                    {/* Tasks Flow */}
+                    {flowState.rootTaskIds && flowState.rootTaskIds.length > 0 && (
+                        <>
+                            <ArrowConnector label="Select" />
+                            <div className="myd-flow-branches">
+                                {flowState.rootTaskIds.map(taskId => renderTaskBranch(taskId))}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Empty state prompt */}
+                    {(!flowState.rootTaskIds || flowState.rootTaskIds.length === 0) && (
+                        <div className="myd-empty-flow">
+                            <div className="myd-empty-flow-icon">↓</div>
+                            <p>Click <strong>"To-Do List"</strong> above to select your first tasks for today</p>
+                        </div>
+                    )}
+
+                    {/* End of day footer */}
+                    {totalInFlow > 0 && completedCount === totalInFlow && totalInFlow > 0 && (
+                        <div className="myd-flow-complete-banner">
+                            🎉 All tasks in your flow are complete! Total time: {fmtMs(totalMs)}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </>
     );
 }
 
@@ -544,7 +1060,7 @@ export default function DashboardPage() {
                         <div className="stat-card"><div className="stat-value">{totalDays}</div><div className="stat-label">Total Days</div></div>
                         <div className="stat-card"><div className="stat-value">{streaks.completedDays}</div><div className="stat-label">Completed Days</div></div>
                         <div className="stat-card"><div className="stat-value">{pct}%</div><div className="stat-label">Completion</div></div>
-                        <div className="stat-card"><div className="stat-value">{streaks.longestStreak}</div><div className="stat-label">Longest Streak</div><div className="stat-habit-name">{streaks.bestHabitName || '—'}</div></div>
+                        <div className="stat-card"><div className="stat-value">{streaks.longestStreak}</div><div className="stat-label">Longest Streak</div></div>
                         <div className="stat-card"><div className="stat-value">{consistency}%</div><div className="stat-label">Consistency</div></div>
                     </div>
                 </div>
@@ -657,7 +1173,7 @@ export default function DashboardPage() {
                     <div className="stat-card stat-card-streak">
                         <div className="stat-icon">🔥</div>
                         <div className="stat-value">{bestStreak}</div>
-                        <div className="stat-sub">{bestStreakHabit || ''}</div>
+                         <div className="stat-sub"></div>
                         <div className="stat-label">Best Streak</div>
                         <div className="momentum-tooltip streak-tooltip"><h4>Top 3 Streaks</h4><ul>{topStreaks.map(s => <li key={s.name}><strong>{s.streak} days</strong> in {s.name}</li>)}</ul></div>
                     </div>
@@ -791,7 +1307,7 @@ export default function DashboardPage() {
     // ─── Main Render ─────────────────────────────────────────
     return (
         <>
-            <Navbar user={user} onLogout={handleLogout} currentPage={page} onNavigate={p => { if (p === 'landing') { setPage('landing'); } else if (p === 'dashboard') { setPage('dashboard'); } }} />
+            <Navbar user={user} onLogout={handleLogout} currentPage={page} onNavigate={p => { if (p === 'landing') { setPage('landing'); } else if (p === 'map') { setPage('map'); } else if (p === 'dashboard') { setPage('dashboard'); } }} />
 
             {/* Dreams Page */}
             <section className={`page${page === 'landing' ? ' active' : ''}`}>
@@ -806,6 +1322,11 @@ export default function DashboardPage() {
                     <DreamsGrid />
                 </div>
                 <div className="motivation-banner"><p>&ldquo;You don&apos;t rise to the level of your dreams. You fall to the level of your systems.&rdquo;</p></div>
+            </section>
+
+            {/* Map Your Day Page */}
+            <section className={`page${page === 'map' ? ' active' : ''}`}>
+                {page === 'map' && <MapYourDay appData={appData} persist={persist} onNavigate={setPage} />}
             </section>
 
             {/* Dream Detail Page */}

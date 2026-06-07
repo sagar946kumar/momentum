@@ -98,6 +98,8 @@ import { createClient } from '@supabase/supabase-js';
   let perfChart = null;
   let pieChart = null;
   let weeklyChart = null;
+  let mapActiveDropdown = null;
+  let mapEditingSlot = null;
 
   // ─── DOM Refs ──────────────────────────────────────────────
   const $ = (sel) => document.querySelector(sel);
@@ -106,6 +108,7 @@ import { createClient } from '@supabase/supabase-js';
   const pages = {
     landing: $('#page-landing'),
     dream: $('#page-dream'),
+    map: $('#page-map'),
     dashboard: $('#page-dashboard'),
   };
 
@@ -134,6 +137,10 @@ import { createClient } from '@supabase/supabase-js';
         pages.dream.classList.add('active');
         renderDreamPage();
         break;
+      case 'map':
+        pages.map.classList.add('active');
+        renderMapPage();
+        break;
       case 'dashboard':
         pages.dashboard.classList.add('active');
         renderDashboard();
@@ -148,6 +155,370 @@ import { createClient } from '@supabase/supabase-js';
   }
 
   window.addEventListener('hashchange', handleRoute);
+
+  // Handle click outside to close dropdowns
+  window.addEventListener('click', (e) => {
+    if (mapActiveDropdown && !e.target.closest('.timeline-slot-dropdown-wrapper') && !e.target.closest('.timeline-slot-empty-btn')) {
+      mapActiveDropdown = null;
+      renderMapPage();
+    }
+  });
+
+  // ─── Map Your Day ──────────────────────────────────────────
+  const timeSlots = [
+    '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
+    '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00',
+    '20:00', '21:00', '22:00', '23:00'
+  ];
+
+  function formatTime(slot) {
+    const hour = parseInt(slot.split(':')[0]);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+    return `${displayHour}:00 ${ampm}`;
+  }
+
+  function getSlotItem(slot) {
+    let found = null;
+    appData.dreams.forEach(d => {
+      d.habits.forEach(h => {
+        if (h.timeSlot === slot) {
+          found = { ...h, dreamId: d.id, dreamTitle: d.title, isSystem: d.isSystem || false };
+        }
+      });
+    });
+    return found;
+  }
+
+  function renderMapPage() {
+    const today = new Date().getDate();
+    const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
+    const currentHour = new Date().getHours();
+
+    // 1. Unscheduled habits
+    const unscheduledHabits = [];
+    appData.dreams.forEach(d => {
+      if (d.isSystem) return;
+      d.habits.forEach(h => {
+        if (!h.timeSlot) {
+          unscheduledHabits.push({ ...h, dreamId: d.id, dreamTitle: d.title });
+        }
+      });
+    });
+
+    const $unscheduledList = $('#unscheduled-habits-list');
+    if (unscheduledHabits.length === 0) {
+      $unscheduledList.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 12px 0;">All habits are scheduled!</p>`;
+    } else {
+      $unscheduledList.innerHTML = unscheduledHabits.map(h => `
+        <div class="pool-habit-item" data-dream-id="${h.dreamId}" data-habit-id="${h.id}">
+          <div>
+            <div class="pool-habit-name">${escapeHtml(h.name)}</div>
+            <div class="pool-habit-dream">${escapeHtml(h.dreamTitle)}</div>
+          </div>
+          <span style="font-size: 0.75rem; color: var(--blue); font-weight: 600;">+ Map</span>
+        </div>
+      `).join('');
+
+      // Add click listeners to pool items
+      $unscheduledList.querySelectorAll('.pool-habit-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const dreamId = item.dataset.dreamId;
+          const habitId = item.dataset.habitId;
+          const emptySlot = timeSlots.find(slot => !getSlotItem(slot));
+          if (emptySlot) {
+            scheduleHabit(dreamId, habitId, emptySlot);
+          } else {
+            alert("No empty time slots remaining. Free up a slot first!");
+          }
+        });
+      });
+    }
+
+    // 2. Timeline List
+    const $timelineList = $('#map-timeline-list');
+    $timelineList.innerHTML = timeSlots.map(slot => {
+      const item = getSlotItem(slot);
+      const slotHour = parseInt(slot.split(':')[0]);
+      const isActive = currentHour === slotHour;
+      const isCompleted = item && item.tracking[mk] && item.tracking[mk][today] === true;
+
+      let contentHtml = '';
+      if (mapEditingSlot === slot) {
+        contentHtml = `
+          <div style="display: flex; gap: 8px; width: 100%; align-items: center;">
+            <input type="text" class="input-field inline-task-input" style="margin: 0; padding: 6px 12px; font-size: 0.85rem;" placeholder="Task description..." autoFocus />
+            <button class="btn btn-primary btn-sm btn-save-inline-task" style="padding: 6px 12px;" data-slot="${slot}">Save</button>
+            <button class="btn btn-secondary btn-sm btn-cancel-inline-task" style="padding: 6px 12px;">✕</button>
+          </div>
+        `;
+      } else if (item) {
+        contentHtml = `
+          <div class="timeline-slot-filled">
+            <div class="timeline-slot-details">
+              <span class="timeline-slot-title">${escapeHtml(item.name)}</span>
+              <span class="timeline-slot-subtitle">
+                ${item.isSystem ? "Today's Task" : `Dream: ${escapeHtml(item.dreamTitle)}`}
+              </span>
+            </div>
+            <button class="timeline-slot-clear" data-slot="${slot}" title="Unschedule">✕</button>
+          </div>
+        `;
+      } else {
+        contentHtml = `
+          <div class="timeline-slot-dropdown-wrapper">
+            <button class="timeline-slot-empty-btn" data-slot="${slot}">
+              <span>+</span> Add habit or task
+            </button>
+            ${mapActiveDropdown === slot ? `
+              <div class="timeline-slot-dropdown">
+                <div class="timeline-slot-dropdown-option opt-custom-task" data-slot="${slot}" style="font-weight: 600; color: var(--blue);">
+                  📝 Write Custom Task...
+                </div>
+                ${unscheduledHabits.length > 0 ? `
+                  <div class="timeline-slot-dropdown-option separator">Schedule a Habit:</div>
+                  ${unscheduledHabits.map(h => `
+                    <div class="timeline-slot-dropdown-option opt-schedule-habit" data-dream-id="${h.dreamId}" data-habit-id="${h.id}" data-slot="${slot}">
+                      ${escapeHtml(h.name)} <span style="font-size: 0.7rem; color: var(--text-muted);">(${escapeHtml(h.dreamTitle)})</span>
+                    </div>
+                  `).join('')}
+                ` : ''}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      return `
+        <div class="timeline-row${isActive ? ' active-hour' : ''}${isCompleted ? ' completed-row' : ''}">
+          <div class="timeline-time-node"></div>
+          <div class="timeline-time-label">${formatTime(slot)}</div>
+          <div class="timeline-content-slot" style="display: block;">
+            ${contentHtml}
+          </div>
+          <div class="timeline-checkbox-wrapper">
+            ${item ? `
+              <button class="timeline-checkbox${isCompleted ? ' checked' : ''}" data-dream-id="${item.dreamId}" data-habit-id="${item.id}">
+                ✓
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Attach timeline event listeners
+    $timelineList.querySelectorAll('.timeline-slot-empty-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        mapActiveDropdown = btn.dataset.slot;
+        renderMapPage();
+      });
+    });
+
+    $timelineList.querySelectorAll('.opt-custom-task').forEach(opt => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        mapEditingSlot = opt.dataset.slot;
+        renderMapPage();
+      });
+    });
+
+    $timelineList.querySelectorAll('.opt-schedule-habit').forEach(opt => {
+      opt.addEventListener('click', () => {
+        scheduleHabit(opt.dataset.dreamId, opt.dataset.habitId, opt.dataset.slot);
+      });
+    });
+
+    $timelineList.querySelectorAll('.btn-cancel-inline-task').forEach(btn => {
+      btn.addEventListener('click', () => {
+        mapEditingSlot = null;
+        renderMapPage();
+      });
+    });
+
+    $timelineList.querySelectorAll('.btn-save-inline-task').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const slot = btn.dataset.slot;
+        const input = btn.parentElement.querySelector('.inline-task-input');
+        saveCustomTask(input.value, slot);
+      });
+    });
+
+    $timelineList.querySelectorAll('.inline-task-input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const slot = mapEditingSlot;
+          saveCustomTask(input.value, slot);
+        }
+      });
+    });
+
+    $timelineList.querySelectorAll('.timeline-slot-clear').forEach(btn => {
+      btn.addEventListener('click', () => {
+        unscheduleSlot(btn.dataset.slot);
+      });
+    });
+
+    $timelineList.querySelectorAll('.timeline-checkbox').forEach(btn => {
+      btn.addEventListener('click', () => {
+        toggleCompletion(btn.dataset.dreamId, btn.dataset.habitId);
+      });
+    });
+
+    // 3. Completion progress calculation
+    let totalScheduled = 0;
+    let completedScheduled = 0;
+    timeSlots.forEach(slot => {
+      const item = getSlotItem(slot);
+      if (item) {
+        totalScheduled++;
+        if (item.tracking[mk] && item.tracking[mk][today] === true) {
+          completedScheduled++;
+        }
+      }
+    });
+
+    const completionPct = totalScheduled > 0 ? Math.round((completedScheduled / totalScheduled) * 100) : 0;
+    $('#map-progress-pct').textContent = `${completionPct}%`;
+    $('#map-ring-fill').setAttribute('stroke-dasharray', `${completionPct}, 100`);
+    $('#map-progress-text').textContent = `${completedScheduled} of ${totalScheduled} slots done`;
+    $('#map-today-date').textContent = `Today: ${new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}`;
+  }
+
+  function scheduleHabit(dreamId, habitId, slot) {
+    // Clear slot
+    appData.dreams.forEach(d => {
+      d.habits.forEach(h => {
+        if (h.timeSlot === slot) h.timeSlot = null;
+      });
+    });
+    const dream = appData.dreams.find(d => d.id === dreamId);
+    if (dream) {
+      const habit = dream.habits.find(h => h.id === habitId);
+      if (habit) habit.timeSlot = slot;
+    }
+    saveData(appData);
+    mapActiveDropdown = null;
+    renderMapPage();
+  }
+
+  function saveCustomTask(text, slot) {
+    if (!text.trim()) return;
+    appData.dreams.forEach(d => {
+      d.habits.forEach(h => {
+        if (h.timeSlot === slot) h.timeSlot = null;
+      });
+    });
+
+    let systemDream = appData.dreams.find(d => d.isSystem || d.id === 'system-tasks');
+    if (!systemDream) {
+      systemDream = {
+        id: 'system-tasks',
+        title: 'Custom Tasks',
+        isSystem: true,
+        createdAt: new Date().toISOString(),
+        habits: []
+      };
+      appData.dreams.push(systemDream);
+    }
+
+    const task = {
+      id: generateId(),
+      name: text.trim(),
+      createdAt: new Date().toISOString(),
+      tracking: {},
+      goals: {},
+      timeSlot: slot
+    };
+
+    const today = new Date().getDate();
+    const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
+    task.tracking[mk] = {};
+    for (let d = 1; d < today; d++) {
+      task.tracking[mk][d] = 'na';
+    }
+
+    systemDream.habits.push(task);
+    saveData(appData);
+    mapEditingSlot = null;
+    mapActiveDropdown = null;
+    renderMapPage();
+  }
+
+  function unscheduleSlot(slot) {
+    appData.dreams.forEach(d => {
+      d.habits.forEach(h => {
+        if (h.timeSlot === slot) h.timeSlot = null;
+      });
+    });
+    saveData(appData);
+    renderMapPage();
+  }
+
+  function toggleCompletion(dreamId, habitId) {
+    const today = new Date().getDate();
+    const mk = monthKey(new Date().getFullYear(), new Date().getMonth());
+
+    const dream = appData.dreams.find(d => d.id === dreamId);
+    if (dream) {
+      const habit = dream.habits.find(h => h.id === habitId);
+      if (habit) {
+        if (!habit.tracking[mk]) habit.tracking[mk] = {};
+        const current = habit.tracking[mk][today];
+        if (current === true) {
+          delete habit.tracking[mk][today];
+        } else {
+          habit.tracking[mk][today] = true;
+        }
+      }
+    }
+    saveData(appData);
+    renderMapPage();
+  }
+
+  function autoMap() {
+    const unmapped = [];
+    appData.dreams.forEach(d => {
+      if (d.isSystem) return;
+      d.habits.forEach(h => {
+        if (!h.timeSlot) {
+          unmapped.push(h);
+        }
+      });
+    });
+
+    if (unmapped.length === 0) return;
+
+    const busySlots = new Set();
+    appData.dreams.forEach(d => {
+      d.habits.forEach(h => {
+        if (h.timeSlot) busySlots.add(h.timeSlot);
+      });
+    });
+
+    let unmappedIdx = 0;
+    for (let i = 2; i < timeSlots.length; i++) {
+      const slot = timeSlots[i];
+      if (!busySlots.has(slot) && unmappedIdx < unmapped.length) {
+        unmapped[unmappedIdx].timeSlot = slot;
+        unmappedIdx++;
+      }
+    }
+    saveData(appData);
+    renderMapPage();
+  }
+
+  function clearSchedule() {
+    appData.dreams.forEach(d => {
+      d.habits.forEach(h => {
+        h.timeSlot = null;
+      });
+    });
+    appData.dreams = appData.dreams.filter(d => !d.isSystem);
+    saveData(appData);
+    renderMapPage();
+  }
 
   // ─── Realtime Sync ──────────────────────────────────────────
   async function setupSupabaseRealtime() {
@@ -749,7 +1120,8 @@ import { createClient } from '@supabase/supabase-js';
     $('#stat-completed-days').textContent = streaks.completedDays;
     $('#stat-completion-pct').textContent = pct + '%';
     $('#stat-longest-streak').textContent = streaks.longestStreak;
-    $('#stat-streak-habit').textContent = streaks.bestHabitName || '—';
+    const statStreakHabit = $('#stat-streak-habit');
+    if (statStreakHabit) statStreakHabit.textContent = streaks.bestHabitName || '—';
     $('#stat-consistency').textContent = consistency + '%';
   }
 
@@ -853,7 +1225,8 @@ import { createClient } from '@supabase/supabase-js';
     momSub.textContent = `${momentumRating} PERFORMANCE`;
 
     $('#dash-streak').textContent = bestStreak;
-    $('#dash-streak-habit').textContent = bestStreakHabit || '';
+    const dashStreakHabit = $('#dash-streak-habit');
+    if (dashStreakHabit) dashStreakHabit.textContent = bestStreakHabit || '';
     $('#dash-today').textContent = todayPct + '%';
     $('#dash-focus-dream').textContent = focusDream ? focusDream.title : '—';
     $('#dash-focus-pct').textContent = focusDream ? focusContrib + '% of your energy' : '';
@@ -1634,6 +2007,10 @@ import { createClient } from '@supabase/supabase-js';
         renderDreamPage();
       });
     });
+
+    // Map Your Day
+    $('#btn-map-automap').addEventListener('click', autoMap);
+    $('#btn-map-clear').addEventListener('click', clearSchedule);
   }
 
   function saveDream() {

@@ -58,6 +58,7 @@
     <div class="nav-right" style="display: flex; align-items: center; gap: 20px;">
       <div class="nav-links">
         <a href="#landing" class="nav-link" data-page="landing">Dreams</a>
+        <a href="#map" class="nav-link" data-page="map">Map Your Day</a>
         <a href="#dashboard" class="nav-link" data-page="dashboard">Dashboard</a>
       </div>
       <div class="user-profile" id="user-profile">
@@ -224,7 +225,7 @@
         <div class="stat-card">
           <div class="stat-value" id="stat-longest-streak">0</div>
           <div class="stat-label">Longest Streak</div>
-          <div class="stat-habit-name" id="stat-streak-habit">—</div>
+
         </div>
         <div class="stat-card">
           <div class="stat-value" id="stat-consistency">0%</div>
@@ -238,6 +239,68 @@
       <p>"Small habits. Massive transformation."</p>
     </div>
 
+  </section>
+
+  <!-- ========== PAGE: MAP YOUR DAY ========== -->
+  <section id="page-map" class="page">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">Map Your Day</h1>
+      <p class="dashboard-sub">Design your daily routine and execute with momentum</p>
+    </div>
+
+    <div class="map-container">
+      <!-- Left Sidebar -->
+      <div class="map-sidebar">
+        <div class="pool-card">
+          <div class="map-progress-section">
+            <div class="map-progress-ring-container">
+              <svg width="60" height="60" viewBox="0 0 36 36">
+                <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#F0F2F5" stroke-width="3.5" />
+                <path id="map-ring-fill" class="ring-fill" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--blue)" stroke-width="3.5" stroke-dasharray="0, 100" stroke-linecap="round" />
+              </svg>
+              <div class="map-progress-ring-text" id="map-progress-pct">0%</div>
+            </div>
+            <div>
+              <div style="font-size: 0.95rem; font-weight: 700;">Today's Progress</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);" id="map-progress-text">0 of 0 slots done</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pool-card">
+          <div class="pool-card-title">Unscheduled Habits</div>
+          <div class="pool-habits-list" id="unscheduled-habits-list">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <div class="pool-card">
+          <div class="pool-card-title">Quick Actions</div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button class="btn btn-primary btn-sm" style="width: 100%; justify-content: center; display: inline-flex;" id="btn-map-automap">
+              ⚡ Auto-Map Habits
+            </button>
+            <button class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center; display: inline-flex;" id="btn-map-clear">
+              ✕ Clear Day Map
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Timeline -->
+      <div class="map-timeline-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 16px;">
+          <div style="font-weight: 700; font-size: 1.1rem;">Daily Schedule</div>
+          <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;" id="map-today-date">
+            Today
+          </div>
+        </div>
+
+        <div class="timeline-list" id="map-timeline-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ========== PAGE: DASHBOARD ========== -->
@@ -266,7 +329,7 @@
       <div class="stat-card stat-card-streak">
         <div class="stat-icon">🔥</div>
         <div class="stat-value" id="dash-streak">0</div>
-        <div class="stat-sub" id="dash-streak-habit"></div>
+
         <div class="stat-label">Best Streak</div>
         <div class="momentum-tooltip streak-tooltip">
           <h4>Top 3 Streaks</h4>
