@@ -3351,3 +3351,64 @@ cite {
   font-size: 0.72rem;
   white-space: nowrap;
 }
+
+/* ---------- Responsive: Dream Controls Row ---------- */
+@media (max-width: 768px) {
+  .dream-controls-row {
+    padding: 10px 16px;
+    gap: 10px;
+    margin: 12px auto 4px;
+  }
+
+  .dream-controls-left {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .dream-controls-center {
+    gap: 8px;
+  }
+
+  .dream-controls-right .btn-add-habit-sm {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .dream-controls-row {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px auto 2px;
+  }
+
+  .dream-controls-center {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .dream-controls-left {
+    flex: 1;
+  }
+
+  .dream-controls-right {
+    margin-left: auto;
+  }
+
+  .dream-switcher-pill {
+    max-width: 130px;
+    font-size: 0.78rem;
+  }
+
+  .dropdown-trigger {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+  }
+
+  .btn-add-habit-sm {
+    padding: 7px 12px;
+    font-size: 0.78rem;
+  }
+}

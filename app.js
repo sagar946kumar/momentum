@@ -1296,20 +1296,22 @@ import { createClient } from '@supabase/supabase-js';
     // Attach click events to the items
     monthMenu.querySelectorAll('.dropdown-item').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        console.log("Month item clicked:", btn.dataset.month);
         e.stopPropagation();
         currentMonth = parseInt(btn.dataset.month);
         monthMenu.classList.remove('show');
-        monthTrigger.closest('.custom-dropdown').classList.remove('open');
+        $('#month-trigger').closest('.custom-dropdown').classList.remove('open');
         renderDreamPage();
       });
     });
 
     yearMenu.querySelectorAll('.dropdown-item').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        console.log("Year item clicked:", btn.dataset.year);
         e.stopPropagation();
         currentYear = parseInt(btn.dataset.year);
         yearMenu.classList.remove('show');
-        yearTrigger.closest('.custom-dropdown').classList.remove('open');
+        $('#year-trigger').closest('.custom-dropdown').classList.remove('open');
         renderDreamPage();
       });
     });
