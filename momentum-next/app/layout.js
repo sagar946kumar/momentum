@@ -2,7 +2,7 @@ import './globals.css';
 import Script from 'next/script';
 
 export const metadata = {
-  title: 'Momentum – Give Momentum to Your Dreams',
+  title: 'momentum2dreams – Give Momentum to Your Dreams',
   description: 'A modern habit-tracking app to build habits, execute daily goals, and give momentum to your dreams.',
 };
 
@@ -10,6 +10,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <link rel="icon" type="image/png" href="/logo.png" />
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-LFZMYVPJ26"
           strategy="afterInteractive"
