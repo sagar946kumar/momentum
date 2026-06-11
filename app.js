@@ -92,6 +92,7 @@ import { createClient } from '@supabase/supabase-js';
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth(); // 0-indexed
   let editingDreamId = null;
+  let editingHabitId = null;
   let deletingType = null;  // 'dream' | 'habit'
   let deletingId = null;
   let dailyChart = null;
@@ -110,6 +111,7 @@ import { createClient } from '@supabase/supabase-js';
     dream: $('#page-dream'),
     map: $('#page-map'),
     dashboard: $('#page-dashboard'),
+    more: $('#page-more'),
   };
 
   // ─── Router ────────────────────────────────────────────────
@@ -144,6 +146,9 @@ import { createClient } from '@supabase/supabase-js';
       case 'dashboard':
         pages.dashboard.classList.add('active');
         renderDashboard();
+        break;
+      case 'more':
+        pages.more.classList.add('active');
         break;
       default:
         pages.landing.classList.add('active');
@@ -947,6 +952,16 @@ import { createClient } from '@supabase/supabase-js';
     return habit;
   }
 
+  function updateHabit(dreamId, habitId, name) {
+    const dream = getDream(dreamId);
+    if (!dream) return;
+    const habit = dream.habits.find(h => h.id === habitId);
+    if (habit) {
+      habit.name = name.trim();
+      saveData(appData);
+    }
+  }
+
   function deleteHabit(dreamId, habitId) {
     const dream = getDream(dreamId);
     if (!dream) return;
@@ -1242,6 +1257,68 @@ import { createClient } from '@supabase/supabase-js';
         navigate(`dream/${card.dataset.id}`);
       });
     });
+
+    // Make cards draggable and add drag-and-drop event handlers for smooth reordering
+    grid.querySelectorAll('.dream-card').forEach(card => {
+      card.setAttribute('draggable', 'true');
+
+      card.addEventListener('dragstart', (e) => {
+        card.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', card.dataset.id);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        
+        // Save the new order based on current DOM order
+        const currentIds = Array.from(grid.querySelectorAll('.dream-card')).map(c => c.dataset.id);
+        const reorderedDreams = currentIds.map(id => appData.dreams.find(d => d.id === id)).filter(Boolean);
+        appData.dreams = reorderedDreams;
+        saveData(appData);
+      });
+
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const draggingCard = grid.querySelector('.dream-card.dragging');
+        if (!draggingCard || draggingCard === card) return;
+
+        // Perform FLIP first frame
+        const currentCards = Array.from(grid.querySelectorAll('.dream-card'));
+        const firstPositions = currentCards.map(c => ({
+          el: c,
+          rect: c.getBoundingClientRect()
+        }));
+
+        // Determine where to insert the dragging card
+        const draggingIndex = currentCards.indexOf(draggingCard);
+        const targetIndex = currentCards.indexOf(card);
+
+        if (draggingIndex < targetIndex) {
+          card.after(draggingCard);
+        } else {
+          card.before(draggingCard);
+        }
+
+        // Apply FLIP transition
+        const newCards = grid.querySelectorAll('.dream-card');
+        newCards.forEach(c => {
+          const first = firstPositions.find(p => p.el === c);
+          if (first) {
+            const lastRect = c.getBoundingClientRect();
+            const dx = first.rect.left - lastRect.left;
+            const dy = first.rect.top - lastRect.top;
+            if (dx !== 0 || dy !== 0) {
+              c.style.transition = 'none';
+              c.style.transform = `translate(${dx}px, ${dy}px)`;
+              c.offsetHeight; // force reflow
+              c.style.transition = 'transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)';
+              c.style.transform = 'none';
+            }
+          }
+        });
+      });
+    });
   }
 
   // ─── Render: Dream Detail Page ─────────────────────────────
@@ -1362,7 +1439,8 @@ import { createClient } from '@supabase/supabase-js';
       html += '<tr>';
       html += `<td class="habit-name-cell">
         <div class="habit-name-inner">
-          <span>${escapeHtml(habit.name)}</span>
+          <span style="flex-grow: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(habit.name)}</span>
+          <button class="habit-edit-btn" data-habit-id="${habit.id}" title="Edit habit">✎</button>
           <button class="habit-delete-btn" data-habit-id="${habit.id}" title="Delete habit">✕</button>
         </div>
       </td>`;
@@ -1434,6 +1512,23 @@ import { createClient } from '@supabase/supabase-js';
         const habit = dream.habits.find(h => h.id === btn.dataset.habitId);
         $('#confirm-message').textContent = `Delete habit "${habit ? habit.name : ''}"?`;
         openModal('modal-confirm');
+      });
+    });
+
+    // Habit edit
+    container.querySelectorAll('.habit-edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const habitId = btn.dataset.habitId;
+        const habit = dream.habits.find(h => h.id === habitId);
+        if (habit) {
+          editingHabitId = habitId;
+          $('#modal-habit h3').textContent = 'Edit Habit';
+          $('#input-habit-name').value = habit.name;
+          $('#btn-save-habit').textContent = 'Save Changes';
+          openModal('modal-habit');
+          setTimeout(() => $('#input-habit-name').focus(), 100);
+        }
       });
     });
   }
@@ -2356,6 +2451,9 @@ import { createClient } from '@supabase/supabase-js';
 
     // Habit modal
     $('#btn-add-habit').addEventListener('click', () => {
+      editingHabitId = null;
+      $('#modal-habit h3').textContent = 'Add Habit';
+      $('#btn-save-habit').textContent = 'Add Habit';
       $('#input-habit-name').value = '';
       openModal('modal-habit');
       setTimeout(() => $('#input-habit-name').focus(), 100);
@@ -2450,7 +2548,12 @@ import { createClient } from '@supabase/supabase-js';
     const name = $('#input-habit-name').value.trim();
     if (!name || !currentDreamId) return;
 
-    addHabit(currentDreamId, name);
+    if (editingHabitId) {
+      updateHabit(currentDreamId, editingHabitId, name);
+      editingHabitId = null;
+    } else {
+      addHabit(currentDreamId, name);
+    }
     closeModal('modal-habit');
     renderDreamPage();
   }

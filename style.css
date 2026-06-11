@@ -449,6 +449,14 @@ body {
   transform: translateY(-3px);
 }
 
+.dream-card.dragging {
+  opacity: 0.4;
+  border: 2px dashed var(--blue) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  background: var(--blue-light) !important;
+}
+
 .dream-card:hover::before {
   opacity: 1;
 }
@@ -922,6 +930,32 @@ body {
 .habit-delete-btn:hover {
   background: var(--red-light);
   color: var(--red);
+}
+
+.habit-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: all var(--duration) var(--ease);
+  flex-shrink: 0;
+  opacity: 0;
+}
+
+.habit-name-cell:hover .habit-edit-btn {
+  opacity: 1;
+}
+
+.habit-edit-btn:hover {
+  background: var(--blue-light);
+  color: var(--blue);
 }
 
 /* Goal Column */
@@ -3502,4 +3536,11 @@ body {
     min-width: 30px !important;
     max-width: 30px !important;
   }
+}
+
+/* Startup Card Hover Effect */
+.startup-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
+  border-color: var(--blue) !important;
 }

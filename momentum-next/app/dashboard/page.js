@@ -16,14 +16,16 @@ import {
 function Navbar({ user, onLogout, currentPage, onNavigate }) {
     return (
         <nav className="navbar">
-            <a href="#" className="nav-logo" onClick={e => { e.preventDefault(); onNavigate('landing'); }}>
-                <span className="logo-icon">◆</span> Momentum
+            <a href="#" className="nav-logo" style={{ display: 'flex', alignItems: 'center', gap: 6 }} onClick={e => { e.preventDefault(); onNavigate('landing'); }}>
+                <img src="/logo.png" alt="logo" style={{ height: 16, width: 'auto', borderRadius: 2 }} />
+                <span>momentum2dreams</span>
             </a>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                 <div className="nav-links">
                     <span className={`nav-link${currentPage === 'landing' || currentPage === 'dream' ? ' active' : ''}`} onClick={() => onNavigate('landing')}>Dreams</span>
                     <span className={`nav-link${currentPage === 'map' ? ' active' : ''}`} onClick={() => onNavigate('map')}>Map Your Day</span>
                     <span className={`nav-link${currentPage === 'dashboard' ? ' active' : ''}`} onClick={() => onNavigate('dashboard')}>Dashboard</span>
+                    <span className={`nav-link${currentPage === 'more' ? ' active' : ''}`} onClick={() => onNavigate('more')}>More</span>
                 </div>
                 {user && (
                     <div className="user-profile">
@@ -1512,10 +1514,84 @@ export default function DashboardPage() {
         );
     }
 
+    function MoreStartups() {
+        const startups = [
+            {
+                title: "Intro to Petro",
+                url: "https://intro2petro.vercel.app/",
+                desc: "A premier interactive library and learning platform tailored specifically for petroleum engineering students.",
+                tag: "Education",
+                image: "/intro2petro.png"
+            },
+            {
+                title: "momentum2dreams",
+                url: "https://momentum2dreams.vercel.app/",
+                desc: "A modular habit-building and routine execution system designed to break down massive life goals into daily progress.",
+                tag: "System",
+                image: "/momentum2dreams.png"
+            },
+            {
+                title: "Book A Week",
+                url: "https://bookaweek.vercel.app/",
+                desc: "A minimal, beautiful habit companion helping you systemize book reading and compound knowledge weekly.",
+                tag: "Reader",
+                image: "/bookaweek.png"
+            },
+            {
+                title: "CDS Exam Prep",
+                url: "https://cds-exam-prep.vercel.app/",
+                desc: "High-yield preparation guides, test modules, and syllabus checklists for Combined Defence Services aspirants.",
+                tag: "Defence",
+                image: "/cds_exam_prep.png"
+            },
+            {
+                title: "PVT Simulator",
+                url: "https://thermodynamicpvtsimulator.vercel.app/",
+                desc: "A sophisticated engineering tool for high-precision fluid phase equilibrium modeling using various Equations of State (EOS).",
+                tag: "Simulation",
+                image: "/pvt_simulator.png"
+            },
+            {
+                title: "countX",
+                url: "https://countx-one.vercel.app/#",
+                desc: "A fast, streamlined logging and metric counting utility to keep tabs on your quantitative data points.",
+                tag: "Analytics",
+                image: "/countx.png"
+            }
+        ];
+
+        return (
+            <>
+                <div className="more-header" style={{ marginBottom: 40, textAlign: 'center' }}>
+                    <h1 className="more-title" style={{ fontFamily: 'Outfit, sans-serif', fontSize: '2.2rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>More Startups</h1>
+                    <p className="more-sub" style={{ color: 'var(--text-muted)', fontSize: '1rem', maxWidth: 600, margin: '0 auto' }}>Discover other platforms, tools, and learning spaces designed to accelerate your growth.</p>
+                </div>
+
+                <div className="startups-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 30, maxWidth: 1200, margin: '0 auto 60px', padding: '0 20px' }}>
+                    {startups.map(app => (
+                        <div key={app.title} className="startup-card" style={{ background: 'var(--bg-card)', border: '1.5px solid var(--border-light)', borderRadius: 24, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', boxShadow: 'var(--shadow-sm)', position: 'relative' }}>
+                            <div style={{ height: 180, background: `url('${app.image}') no-repeat center top`, backgroundSize: 'cover', position: 'relative', borderBottom: '1px solid var(--border-light)' }}>
+                                <span style={{ position: 'absolute', top: 12, right: 12, fontSize: '0.65rem', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', padding: '4px 8px', borderRadius: 99, fontWeight: 600, color: 'white' }}>{app.tag}</span>
+                            </div>
+                            <div style={{ padding: 28, flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{ color: 'var(--blue)', fontSize: '1rem' }}>◆</span>
+                                    <h3 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '1.35rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{app.title}</h3>
+                                </div>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6, flexGrow: 1, margin: 0 }}>{app.desc}</p>
+                                <a href={app.url} target="_blank" rel="noopener noreferrer" className="app-btn app-btn-primary" style={{ alignSelf: 'flex-start', padding: '10px 20px', fontSize: '0.88rem', fontWeight: 600, borderRadius: 99, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, background: 'var(--blue)', border: 'none', color: 'white', cursor: 'pointer' }}>Visit Site <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>→</span></a>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </>
+        );
+    }
+
     // ─── Main Render ─────────────────────────────────────────
     return (
         <>
-            <Navbar user={user} onLogout={handleLogout} currentPage={page} onNavigate={p => { if (p === 'landing') { setPage('landing'); } else if (p === 'map') { setPage('map'); } else if (p === 'dashboard') { setPage('dashboard'); } }} />
+            <Navbar user={user} onLogout={handleLogout} currentPage={page} onNavigate={p => { if (p === 'landing') { setPage('landing'); } else if (p === 'map') { setPage('map'); } else if (p === 'dashboard') { setPage('dashboard'); } else if (p === 'more') { setPage('more'); } }} />
 
             {/* Dreams Page */}
             <section className={`page${page === 'landing' ? ' active' : ''}`}>
@@ -1555,10 +1631,18 @@ export default function DashboardPage() {
                 {page === 'dashboard' && <Dashboard />}
             </section>
 
+            {/* More Page */}
+            <section className={`page${page === 'more' ? ' active' : ''}`}>
+                {page === 'more' && <MoreStartups />}
+            </section>
+
             {/* Footer */}
             <footer className="footer">
                 <p className="footer-quote">Your future is built daily.<br /><strong>Keep moving.</strong></p>
-                <p className="footer-brand">◆ Momentum</p>
+                <p className="footer-brand" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <img src="/logo.png" alt="logo" style={{ height: 16, width: 'auto', borderRadius: 2 }} />
+                    <span>momentum2dreams</span>
+                </p>
             </footer>
 
             {/* === MODALS === */}

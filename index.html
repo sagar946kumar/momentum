@@ -52,14 +52,15 @@
   <!-- ========== NAVBAR ========== -->
   <nav class="navbar" id="navbar">
     <a href="#landing" class="nav-logo">
-      <img src="logo.png" alt="Momentum" style="height: 32px; width: auto; border-radius: 4px;" />
-      <span>Momentum</span>
+      <img src="logo.png" alt="momentum2dreams" style="height: 32px; width: auto; border-radius: 4px;" />
+      <span>momentum2dreams</span>
     </a>
     <div class="nav-right" style="display: flex; align-items: center; gap: 20px;">
       <div class="nav-links">
         <a href="#landing" class="nav-link" data-page="landing">Dreams</a>
         <a href="#map" class="nav-link" data-page="map">Map Your Day</a>
         <a href="#dashboard" class="nav-link" data-page="dashboard">Dashboard</a>
+        <a href="#more" class="nav-link" data-page="more">More</a>
       </div>
       <div class="user-profile" id="user-profile">
         <img id="user-avatar" src="" alt="User" class="nav-avatar">
@@ -405,10 +406,114 @@
 
   </section>
 
+  <!-- ========== PAGE: MORE ========== -->
+  <section id="page-more" class="page">
+    <div class="more-header" style="margin-bottom: 40px; text-align: center;">
+      <h1 class="more-title" style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">More Startups</h1>
+      <p class="more-sub" style="color: var(--text-muted); font-size: 1rem; max-width: 600px; margin: 0 auto;">Discover other platforms, tools, and learning spaces designed to accelerate your growth.</p>
+    </div>
+
+    <div class="startups-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto 60px; padding: 0 20px;">
+      
+      <!-- Card 1: Intro to Petro -->
+      <div class="startup-card" style="background: var(--bg-card); border: 1.5px solid var(--border-light); border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); position: relative;">
+        <div style="height: 180px; background: url('intro2petro.png') no-repeat center top; background-size: cover; position: relative; border-bottom: 1px solid var(--border-light);">
+          <span style="position: absolute; top: 12px; right: 12px; font-size: 0.65rem; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 99px; font-weight: 600; color: white;">Education</span>
+        </div>
+        <div style="padding: 28px; flex-grow: 1; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--blue); font-size: 1rem;">◆</span>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin: 0;">Intro to Petro</h3>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; flex-grow: 1; margin: 0;">A premier interactive library and learning platform tailored specifically for petroleum engineering students.</p>
+          <a href="https://intro2petro.vercel.app/" target="_blank" class="btn btn-primary" style="align-self: flex-start; padding: 10px 20px; font-size: 0.88rem; font-weight: 600; border-radius: 99px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: var(--blue); transition: all 0.2s ease;">Visit Site <span style="font-size: 1.1rem; line-height: 1;">→</span></a>
+        </div>
+      </div>
+
+      <!-- Card 2: momentum2dreams -->
+      <div class="startup-card" style="background: var(--bg-card); border: 1.5px solid var(--border-light); border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); position: relative;">
+        <div style="height: 180px; background: url('momentum2dreams.png') no-repeat center top; background-size: cover; position: relative; border-bottom: 1px solid var(--border-light);">
+          <span style="position: absolute; top: 12px; right: 12px; font-size: 0.65rem; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 99px; font-weight: 600; color: white;">System</span>
+        </div>
+        <div style="padding: 28px; flex-grow: 1; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--blue); font-size: 1rem;">◆</span>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin: 0;">momentum2dreams</h3>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; flex-grow: 1; margin: 0;">A modular habit-building and routine execution system designed to break down massive life goals into daily progress.</p>
+          <a href="https://momentum2dreams.vercel.app/" target="_blank" class="btn btn-primary" style="align-self: flex-start; padding: 10px 20px; font-size: 0.88rem; font-weight: 600; border-radius: 99px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: var(--blue); transition: all 0.2s ease;">Visit Site <span style="font-size: 1.1rem; line-height: 1;">→</span></a>
+        </div>
+      </div>
+
+      <!-- Card 3: Book A Week -->
+      <div class="startup-card" style="background: var(--bg-card); border: 1.5px solid var(--border-light); border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); position: relative;">
+        <div style="height: 180px; background: url('bookaweek.png') no-repeat center top; background-size: cover; position: relative; border-bottom: 1px solid var(--border-light);">
+          <span style="position: absolute; top: 12px; right: 12px; font-size: 0.65rem; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 99px; font-weight: 600; color: white;">Reader</span>
+        </div>
+        <div style="padding: 28px; flex-grow: 1; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--blue); font-size: 1rem;">◆</span>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin: 0;">Book A Week</h3>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; flex-grow: 1; margin: 0;">A minimal, beautiful habit companion helping you systemize book reading and compound knowledge weekly.</p>
+          <a href="https://bookaweek.vercel.app/" target="_blank" class="btn btn-primary" style="align-self: flex-start; padding: 10px 20px; font-size: 0.88rem; font-weight: 600; border-radius: 99px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: var(--blue); transition: all 0.2s ease;">Visit Site <span style="font-size: 1.1rem; line-height: 1;">→</span></a>
+        </div>
+      </div>
+
+      <!-- Card 4: CDS Exam Prep -->
+      <div class="startup-card" style="background: var(--bg-card); border: 1.5px solid var(--border-light); border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); position: relative;">
+        <div style="height: 180px; background: url('cds_exam_prep.png') no-repeat center top; background-size: cover; position: relative; border-bottom: 1px solid var(--border-light);">
+          <span style="position: absolute; top: 12px; right: 12px; font-size: 0.65rem; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 99px; font-weight: 600; color: white;">Defence</span>
+        </div>
+        <div style="padding: 28px; flex-grow: 1; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--blue); font-size: 1rem;">◆</span>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin: 0;">CDS Exam Prep</h3>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; flex-grow: 1; margin: 0;">High-yield preparation guides, test modules, and syllabus checklists for Combined Defence Services aspirants.</p>
+          <a href="https://cds-exam-prep.vercel.app/" target="_blank" class="btn btn-primary" style="align-self: flex-start; padding: 10px 20px; font-size: 0.88rem; font-weight: 600; border-radius: 99px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: var(--blue); transition: all 0.2s ease;">Visit Site <span style="font-size: 1.1rem; line-height: 1;">→</span></a>
+        </div>
+      </div>
+
+      <!-- Card 5: PVT Simulator -->
+      <div class="startup-card" style="background: var(--bg-card); border: 1.5px solid var(--border-light); border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); position: relative;">
+        <div style="height: 180px; background: url('pvt_simulator.png') no-repeat center top; background-size: cover; position: relative; border-bottom: 1px solid var(--border-light);">
+          <span style="position: absolute; top: 12px; right: 12px; font-size: 0.65rem; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 99px; font-weight: 600; color: white;">Simulation</span>
+        </div>
+        <div style="padding: 28px; flex-grow: 1; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--blue); font-size: 1rem;">◆</span>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin: 0;">PVT Simulator</h3>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; flex-grow: 1; margin: 0;">A sophisticated engineering tool for high-precision fluid phase equilibrium modeling using various Equations of State (EOS).</p>
+          <a href="https://thermodynamicpvtsimulator.vercel.app/" target="_blank" class="btn btn-primary" style="align-self: flex-start; padding: 10px 20px; font-size: 0.88rem; font-weight: 600; border-radius: 99px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: var(--blue); transition: all 0.2s ease;">Visit Site <span style="font-size: 1.1rem; line-height: 1;">→</span></a>
+        </div>
+      </div>
+
+      <!-- Card 6: countX -->
+      <div class="startup-card" style="background: var(--bg-card); border: 1.5px solid var(--border-light); border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: var(--shadow-sm); position: relative;">
+        <div style="height: 180px; background: url('countx.png') no-repeat center top; background-size: cover; position: relative; border-bottom: 1px solid var(--border-light);">
+          <span style="position: absolute; top: 12px; right: 12px; font-size: 0.65rem; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); padding: 4px 8px; border-radius: 99px; font-weight: 600; color: white;">Analytics</span>
+        </div>
+        <div style="padding: 28px; flex-grow: 1; display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="color: var(--blue); font-size: 1rem;">◆</span>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin: 0;">countX</h3>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; flex-grow: 1; margin: 0;">A fast, streamlined logging and metric counting utility to keep tabs on your quantitative data points.</p>
+          <a href="https://countx-one.vercel.app/#" target="_blank" class="btn btn-primary" style="align-self: flex-start; padding: 10px 20px; font-size: 0.88rem; font-weight: 600; border-radius: 99px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: var(--blue); transition: all 0.2s ease;">Visit Site <span style="font-size: 1.1rem; line-height: 1;">→</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ========== FOOTER ========== -->
   <footer class="footer">
     <p class="footer-quote">Your future is built daily.<br /><strong>Keep moving.</strong></p>
-    <p class="footer-brand">◆ Momentum</p>
+    <p class="footer-brand" style="display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <img src="logo.png" alt="logo" style="height: 16px; width: auto; border-radius: 2px;" />
+      <span>momentum2dreams</span>
+    </p>
   </footer>
 
   <!-- ========== MODALS ========== -->

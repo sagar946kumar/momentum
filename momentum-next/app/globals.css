@@ -918,6 +918,14 @@ cite {
   transform: translateY(-3px);
 }
 
+.dream-card.dragging {
+  opacity: 0.4;
+  border: 2px dashed var(--blue) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  background: var(--blue-light) !important;
+}
+
 .dream-card:hover::before {
   opacity: 1;
 }
@@ -1404,6 +1412,23 @@ cite {
 .habit-delete-btn:hover {
   color: var(--red);
   background: var(--red-light);
+}
+
+.habit-edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all var(--duration) var(--ease);
+  flex-shrink: 0;
+}
+
+.habit-edit-btn:hover {
+  color: var(--blue);
+  background: var(--blue-light);
 }
 
 .goal-input {
